@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .resultado-hoja { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
+    .nota-box { background: #F4F6F9; border: 2px solid #E6A817; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 30px; }
+    .nota-numero { font-size: 60px; font-weight: bold; margin: 0; }
+    .bien { color: #2e7d32; }
+    .mal { color: #c62828; }
+    .pregunta-res { margin-bottom: 20px; padding: 15px; border-radius: 5px; }
+    .bg-bien { background: #e8f5e9; border-left: 5px solid #2e7d32; }
+    .bg-mal { background: #ffebee; border-left: 5px solid #c62828; }
+</style>
+
+<div class="resultado-hoja">
+    <div class="nota-box">
+        <h2 style="color: #0B2545; margin-top: 0;">Resultado del Examen</h2>
+        <p class="nota-numero {% if nota_final >= 11 %}bien{% else %}mal{% endif %}">{{ nota_final }} / 20</p>
+        <p style="color: #666; font-size: 18px;">Has acertado {{ puntaje }} de {{ total }} preguntas.</p>
+    </div>
+
+    <h3 style="color: #0B2545; border-bottom: 2px solid #E6A817; padding-bottom: 10px;">Revisión de Respuestas</h3>
+    
+    {% for r in resultados %}
+    <div class="pregunta-res {% if r.acierto %}bg-bien{% else %}bg-mal{% endif %}">
+        <div style="font-weight: bold; color: #0B2545; margin-bottom: 10px;">
+            {{ forloop.counter }}. [{{ r.pregunta.get_tipo_display }}] {{ r.pregunta.enunciado }}
+        </div>
+        
+        <p style="margin: 5px 0; font-size: 14px;">
+            <strong>Tu respuesta:</strong> 
+            <span class="{% if r.acierto %}bien{% else %}mal{% endif %}">{{ r.respuesta_alumno|default:"Sin responder" }}</span>
+        </p>
+        
+        {% if not r.acierto %}
+        <p style="margin: 5px 0; font-size: 14px; color: #2e7d32;">
+            <strong>Respuesta correcta:</strong> {{ r.respuesta_correcta }}
+        </p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'ver_reportes' %}" class="btn-dorado" style="padding: 10px 20px; text-decoration: none;">Volver a Reportes</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema CITEN - Banco de Preguntas</title>
+    <!-- Fuentes e Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS y JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body>
+
+    <!-- Menú Superior -->
+    <nav class="navbar-citen">
+        <h1>Sistema de Exámenes <span>CITEN</span></h1>
+        
+        <div style="display: flex; align-items: center; gap: 15px;">
+            {% if user.is_authenticated %}
+                <div style="color: white; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px;">
+                    <i class="fa-solid fa-circle-user" style="font-size: 24px; color: #E6A817;"></i>
+                    <div>
+                        <span style="display: block; font-size: 14px; font-weight: bold;">{{ user.username }}</span>
+                        <span style="display: block; font-size: 11px; color: #ccc;">Docente / Alumno</span>
+                    </div>
+                </div>
+                
+                <!-- BOTÓN DE SALIR (POST) -->
+                <form action="{% url 'logout' %}" method="post" style="display: inline; margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-dorado" style="padding: 8px 15px; font-size: 14px; box-shadow: none; border: none; cursor: pointer;">
+                        <i class="fa-solid fa-right-from-bracket"></i> Salir
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Contenedor invisible para los mensajes (Esto evita el error en VS Code) -->
+    <div id="django-messages" style="display: none;">
+        {% for message in messages %}
+            <span data-type="{{ message.tags }}" data-text="{{ message|escapejs }}"></span>
+        {% endfor %}
+    </div>
+
+    <!-- Contenido de cada página -->
+    <div class="container" style="margin-bottom: 50px;">
+        {% block contenido %}
+        {% endblock %}
+    </div>
+
+    <!-- SCRIPT PARA MOSTRAR LOS MENSAJES COMO NOTIFICACIONES -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const contenedor = document.getElementById("django-messages");
+            
+            if (contenedor) {
+                const mensajes = contenedor.querySelectorAll("span");
+                
+                mensajes.forEach(msg => {
+                    let tipo = msg.getAttribute("data-type");
+                    let texto = msg.getAttribute("data-text");
+                    
+                    let icono = 'info';
+                    if (tipo.includes('success')) icono = 'success';
+                    else if (tipo.includes('error')) icono = 'error';
+                    else if (tipo.includes('warning')) icono = 'warning';
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: icono,
+                        title: texto,
+                        showConfirmButton: false,
+                        timer: 3500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

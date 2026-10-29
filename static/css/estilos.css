@@ -1,0 +1,87 @@
+:root {
+    --azul-citen: #0B2545; /* Azul marino profundo */
+    --azul-claro: #1B3B6F;
+    --dorado-citen: #E6A817; /* Dorado institucional */
+    --dorado-brillante: #F9C74F;
+    --blanco: #FFFFFF;
+    --gris-fondo: #F4F6F9;
+    --sombra-suave: 0 4px 15px rgba(0,0,0,0.05);
+    --sombra-relieve: 0 10px 20px rgba(0,0,0,0.15), 0 6px 6px rgba(0,0,0,0.10);
+}
+
+body {
+    background-color: var(--gris-fondo);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+}
+
+/* Barra de Navegación con Relieve */
+.navbar-citen {
+    background: linear-gradient(135deg, var(--azul-citen) 0%, var(--azul-claro) 100%);
+    border-bottom: 4px solid var(--dorado-citen);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--sombra-relieve);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-citen h1 {
+    color: var(--blanco);
+    font-size: 24px;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* Efecto de texto en relieve */
+}
+
+.navbar-citen span {
+    color: var(--dorado-brillante);
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Botones con Efecto 3D */
+.btn-dorado {
+    background: linear-gradient(to bottom, var(--dorado-brillante), var(--dorado-citen));
+    color: var(--azul-citen);
+    padding: 12px 24px;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+    border: 1px solid #c99314;
+    cursor: pointer;
+    display: inline-block;
+    box-shadow: 0 4px 0 #b07d14, 0 5px 10px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-dorado:active {
+    box-shadow: 0 1px 0 #b07d14, 0 2px 5px rgba(0,0,0,0.2);
+    transform: translateY(3px); /* Se hunde al hacer clic */
+}
+
+/* Tarjetas con Relieve y Borde Dorado */
+.card-menu {
+    background: var(--blanco);
+    border-left: 6px solid var(--dorado-citen);
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: var(--sombra-relieve);
+    border-radius: 8px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-menu:hover {
+    transform: translateY(-5px); /* Se eleva al pasar el mouse */
+    box-shadow: 0 15px 25px rgba(0,0,0,0.2), 0 10px 10px rgba(0,0,0,0.1);
+}
+
+.card-menu h3 {
+    color: var(--azul-citen);
+    margin-top: 0;
+    font-size: 20px;
+    border-bottom: 2px solid var(--gris-fondo);
+    padding-bottom: 10px;
+}

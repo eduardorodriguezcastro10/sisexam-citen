@@ -1,0 +1,284 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ingreso al Sistema - CITEN</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ENCABEZADO AZUL OSCURO */
+        .header-top {
+            background-color: #0B2545;
+            color: #E6A817;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            border-bottom: 5px solid #E6A817;
+        }
+        .header-top img { height: 60px; }
+        .header-top .textos { text-align: left; }
+        .header-top h1 { margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+        .header-top h2 { margin: 0; font-size: 16px; color: #E6A817; }
+
+        /* CONTENEDOR PRINCIPAL */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        /* CAJA DE LOGIN */
+        .login-box {
+            width: 600px;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .login-header {
+            background-color: #0B2545;
+            color: white;
+            text-align: center;
+            padding: 15px;
+        }
+        .login-header h3 { margin: 0; font-size: 18px; }
+        .login-header p { margin: 5px 0 0 0; font-size: 14px; }
+
+        .login-body {
+            display: flex;
+            background: #f4f6f9;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .login-logo {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #ddd;
+        }
+        .login-logo img { width: 120px; }
+
+        .login-form { flex: 2; padding: 10px; }
+        .form-group { margin-bottom: 15px; display: flex; align-items: center; }
+        .form-group label { width: 100px; font-weight: bold; font-size: 13px; color: #333; }
+        .form-group input, .form-group select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        /* CAPTCHA FUNCIONAL */
+        .captcha-box { text-align: center; margin: 15px 0; }
+        .captcha-img {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            color: #0B2545;
+            text-decoration: line-through;
+            font-style: italic;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+            transform: rotate(-5deg);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+        }
+        .captcha-box input {
+            width: 150px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .btn-ingresar {
+            display: block;
+            width: 100%;
+            background-color: #E6A817;
+            color: #000;
+            padding: 12px;
+            border: none;
+            border-radius: 3px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-ingresar:hover { background-color: #c99314; }
+        .error-msg {
+            color: #c62828;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        /* PIE DE PÁGINA */
+        .footer {
+            background-color: #0B2545;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+            border-top: 5px solid #E6A817;
+        }
+        .footer-col { flex: 1; }
+        .footer-col h4 { margin: 0 0 10px 0; color: #E6A817; font-size: 14px; }
+        .footer-col p { margin: 5px 0; }
+        .footer-bottom {
+            background-color: #E6A817;
+            color: #000;
+            text-align: center;
+            padding: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ENCABEZADO INSTITUCIONAL -->
+    <div class="header-top">
+        <img src="{% static 'insignia_citen.jpg' %}" alt="Escudo CITEN">
+        <div class="textos">
+            <h1>MARINA DE GUERRA DEL PERÚ</h1>
+            <h2>Sistema de Examenes - SISEXAM</h2>
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE LOGIN -->
+    <div class="main-content">
+        <div class="login-box">
+            <div class="login-header">
+                <h3>INGRESO AL SISTEMA</h3>
+                <p>Ingrese Usuario y Contraseña.</p>
+            </div>
+            
+            <div class="login-body">
+                <div class="login-logo">
+                    <img src="{% static 'insignia_citen.jpg' %}" alt="Escudo Central">
+                </div>
+                
+                <div class="login-form">
+                    {% if form.errors %}
+                        <div class="error-msg">Usuario o contraseña incorrectos. Intente de nuevo.</div>
+                    {% endif %}
+
+                    <!-- ID agregado al formulario para el Captcha -->
+                    <form method="post" id="login-form">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label>Usuario:</label>
+                            <input type="text" name="username" placeholder="Código de Usuario" required autofocus>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Contraseña:</label>
+                            <input type="password" name="password" placeholder="Contraseña" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sede:</label>
+                            <select name="sede">
+                                <option value="lima">Sede Callao</option>
+                                <option value="otra">Otra Sede</option>
+                            </select>
+                        </div>
+
+                        <!-- CAPTCHA FUNCIONAL -->
+                        <div class="captcha-box">
+                            <div class="captcha-img" id="captcha-text">A N Q Z B</div>
+                            <div style="font-size: 11px; margin-bottom: 5px;">
+                                <a href="javascript:void(0);" onclick="generarCaptcha()" style="color: blue; text-decoration: none;">Actualizar Gráfico</a>
+                            </div>
+                            <input type="text" id="captcha-input" placeholder="Ingrese Código Captcha" required>
+                            <div id="captcha-error" style="color: #c62828; font-size: 11px; margin-top: 5px; display: none;">El código no coincide.</div>
+                        </div>
+
+                        <button type="submit" class="btn-ingresar">Iniciar Sesión</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA INSTITUCIONAL -->
+    <div class="footer">
+        <div class="footer-col" style="text-align: right; padding-right: 20px;">
+            <img src="{% static 'insignia_citen.jpg' %}" style="height: 40px; opacity: 0.8;">
+        </div>
+        <div class="footer-col" style="border-left: 1px solid #333; padding-left: 20px;">
+            <h4>DIRECCIÓN</h4>
+            <p><i class="fa-solid fa-location-dot"></i> Dirección de la Escuela Superior de Guerra Naval</p>
+            <p>Av Contralmirante mora S/N, Callao</p>
+        </div>
+        <div class="footer-col" style="border-left: 1px solid #333; padding-left: 20px;">
+            <h4>CENTRAL TELEFÓNICA</h4>
+            <p><i class="fa-solid fa-phone"></i> (01) 519 - 0400 Anexo: 6008</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        2026 - Todos los Derechos Reservados | Marina de Guerra del Perú - Instituto de Educacion Superior Tecnologico Publico Naval- Sar-2026    
+    </div>
+
+    <!-- SCRIPT DEL CAPTCHA -->
+    <script>
+        let codigoCaptchaActual = "";
+
+        function generarCaptcha() {
+            const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const numeros = "0123456789";
+            let codigo = "";
+            
+            for (let i = 0; i < 5; i++) {
+                if (Math.random() > 0.5) {
+                    codigo += letras.charAt(Math.floor(Math.random() * letras.length)) + " ";
+                } else {
+                    codigo += numeros.charAt(Math.floor(Math.random() * numeros.length)) + " ";
+                }
+            }
+            
+            codigoCaptchaActual = codigo.trim();
+            document.getElementById("captcha-text").innerText = codigoCaptchaActual;
+            document.getElementById("captcha-input").value = "";
+            document.getElementById("captcha-error").style.display = "none";
+        }
+
+        window.onload = generarCaptcha;
+
+        document.getElementById("login-form").addEventListener("submit", function(e) {
+            const inputUsuario = document.getElementById("captcha-input").value.trim().toUpperCase();
+            
+            if (inputUsuario !== codigoCaptchaActual) {
+                e.preventDefault();
+                document.getElementById("captcha-error").style.display = "block";
+                document.getElementById("captcha-input").value = "";
+                generarCaptcha();
+            }
+        });
+    </script>
+</body>
+</html>

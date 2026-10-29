@@ -1,0 +1,319 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    /* Contenedor principal */
+    .form-wrapper {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 900px;
+        margin: 0 auto;
+        border-top: 6px solid #0B2545;
+    }
+
+    .form-header {
+        color: #0B2545;
+        border-bottom: 3px solid #E6A817;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Fila de 3 columnas para Curso, Año y Sección */
+    .form-row-3 {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        font-weight: bold;
+        color: #0B2545;
+        margin-bottom: 8px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-group label i { color: #E6A817; }
+
+    /* Estilos de los inputs */
+    .form-select, .form-control {
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        color: #333;
+        transition: all 0.3s ease;
+        background-color: #f9f9f9;
+    }
+
+    .form-select:focus, .form-control:focus {
+        border-color: #0B2545;
+        background-color: #fff;
+        outline: none;
+        box-shadow: 0 0 8px rgba(11, 37, 69, 0.2);
+    }
+
+    /* Áreas dinámicas (V/F, OM, COMP, CORR) */
+    .dynamic-box {
+        background: #F8FAFC;
+        border: 2px dashed #b0c4de;
+        border-left: 6px solid #E6A817;
+        padding: 25px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: none; /* Oculto por defecto */
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    .dynamic-box h4 {
+        margin-top: 0;
+        color: #0B2545;
+        font-size: 16px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Filas para Opción Múltiple */
+    .option-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 12px;
+        background: white;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .option-row input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #E6A817;
+    }
+
+    .option-row input[type="text"] {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    /* Filas para Correlación */
+    .corr-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 12px;
+    }
+    
+    .corr-row input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    
+    .corr-arrow {
+        color: #E6A817;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    /* Botones finales */
+    .btn-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 40px;
+        border-top: 1px solid #eee;
+        padding-top: 25px;
+    }
+
+    .btn-cancel {
+        background: #f0f0f0;
+        color: #666;
+        padding: 12px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+    .btn-cancel:hover { background: #e0e0e0; color: #333; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="form-wrapper">
+    <h2 class="form-header"><i class="fa-solid fa-pen-to-square"></i> Registrar Nueva Pregunta</h2>
+    
+    <form method="post" id="pregunta-form">
+        {% csrf_token %}
+        
+        <!-- Fila 1: Curso, Año y Sección -->
+        <div class="form-row-3">
+            <div class="form-group">
+                <label><i class="fa-solid fa-book"></i> Curso:</label>
+                {{ form.curso }}
+            </div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-calendar"></i> Año:</label>
+                {{ form.anio }}
+            </div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-users"></i> Sección:</label>
+                {{ form.seccion }}
+            </div>
+        </div>
+
+        <!-- Fila 2: Tipo de Pregunta y Enunciado -->
+        <div class="form-group">
+            <label><i class="fa-solid fa-list-check"></i> Tipo de Pregunta:</label>
+            {{ form.tipo }}
+        </div>
+
+        <div class="form-group">
+            <label><i class="fa-solid fa-align-left"></i> Enunciado de la Pregunta:</label>
+            {{ form.enunciado }}
+        </div>
+
+        <!-- ================= ÁREAS DINÁMICAS ================= -->
+        
+        <!-- 1. VERDADERO / FALSO -->
+        <div id="box-vf" class="dynamic-box">
+            <h4><i class="fa-solid fa-scale-balanced"></i> Seleccione la Respuesta Correcta:</h4>
+            <div style="display: flex; gap: 30px;">
+                <label style="font-weight: bold; color: #2e7d32; cursor: pointer;">
+                    <input type="radio" name="vf_respuesta" value="true" style="accent-color: #2e7d32; transform: scale(1.2); margin-right: 5px;"> Verdadero
+                </label>
+                <label style="font-weight: bold; color: #c62828; cursor: pointer;">
+                    <input type="radio" name="vf_respuesta" value="false" style="accent-color: #c62828; transform: scale(1.2); margin-right: 5px;"> Falso
+                </label>
+            </div>
+        </div>
+
+        <!-- 2. COMPLETAR PALABRA -->
+        <div id="box-comp" class="dynamic-box">
+            <h4><i class="fa-solid fa-keyboard"></i> Palabra Faltante:</h4>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Escriba la palabra exacta que completa la oración:</label>
+                <input type="text" name="comp_palabra" class="form-control" placeholder="Ejemplo: Segundo" style="background: white;">
+            </div>
+        </div>
+
+        <!-- 3. OPCIÓN MÚLTIPLE -->
+        <div id="box-om" class="dynamic-box">
+            <h4><i class="fa-solid fa-list-ol"></i> Opciones Múltiples (Marque la correcta):</h4>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Marque el círculo de la opción que sea la respuesta correcta y complete las 4 alternativas.</p>
+            
+            <div class="option-row"><input type="radio" name="om_correcta" value="0"> <input type="text" name="om_a" placeholder="Opción A"></div>
+            <div class="option-row"><input type="radio" name="om_correcta" value="1"> <input type="text" name="om_b" placeholder="Opción B"></div>
+            <div class="option-row"><input type="radio" name="om_correcta" value="2"> <input type="text" name="om_c" placeholder="Opción C"></div>
+            <div class="option-row"><input type="radio" name="om_correcta" value="3"> <input type="text" name="om_d" placeholder="Opción D"></div>
+        </div>
+
+        <!-- 4. CORRELACIÓN -->
+        <div id="box-corr" class="dynamic-box">
+            <h4><i class="fa-solid fa-arrows-left-right"></i> Correlación de Conceptos:</h4>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Escriba el concepto a la izquierda y su definición o par correcto a la derecha.</p>
+            
+            <div class="corr-row">
+                <input type="text" name="corr_a_1" placeholder="Concepto 1 (Ej: Proa)">
+                <span class="corr-arrow">➔</span>
+                <input type="text" name="corr_b_1" placeholder="Definición 1 (Ej: Parte delantera)">
+            </div>
+            <div class="corr-row">
+                <input type="text" name="corr_a_2" placeholder="Concepto 2">
+                <span class="corr-arrow">➔</span>
+                <input type="text" name="corr_b_2" placeholder="Definición 2">
+            </div>
+            <div class="corr-row">
+                <input type="text" name="corr_a_3" placeholder="Concepto 3">
+                <span class="corr-arrow">➔</span>
+                <input type="text" name="corr_b_3" placeholder="Definición 3">
+            </div>
+            <div class="corr-row">
+                <input type="text" name="corr_a_4" placeholder="Concepto 4">
+                <span class="corr-arrow">➔</span>
+                <input type="text" name="corr_b_4" placeholder="Definición 4">
+            </div>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="btn-actions">
+            <a href="{% url 'home' %}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-dorado" style="padding: 12px 35px; font-size: 16px;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Pregunta
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- SCRIPT PARA MOSTRAR/OCULTAR CAMPOS SEGÚN EL TIPO -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectTipo = document.getElementById("select-tipo");
+        const boxes = {
+            "VF": document.getElementById("box-vf"),
+            "COMP": document.getElementById("box-comp"),
+            "OM": document.getElementById("box-om"),
+            "CORR": document.getElementById("box-corr"),
+            "CORR_CAUSA": document.getElementById("box-corr"),
+            "CORR_DEF": document.getElementById("box-corr")
+        };
+
+        function actualizarFormulario() {
+            // 1. Ocultar todos los boxes y quitar 'required'
+            Object.values(boxes).forEach(box => {
+                if(box) box.style.display = "none";
+                box.querySelectorAll("input").forEach(input => input.required = false);
+            });
+
+            // 2. Mostrar el box del tipo seleccionado
+            const tipoSeleccionado = selectTipo.value;
+            if (boxes[tipoSeleccionado]) {
+                boxes[tipoSeleccionado].style.display = "block";
+                
+                // 3. Poner 'required' solo a los campos del box visible
+                if(tipoSeleccionado === 'VF') boxes['VF'].querySelectorAll("input[type='radio']")[0].required = true;
+                if(tipoSeleccionado === 'OM') {
+                    boxes['OM'].querySelectorAll("input[type='radio']")[0].required = true;
+                    boxes['OM'].querySelectorAll("input[type='text']").forEach(inp => inp.required = true);
+                }
+                if(tipoSeleccionado === 'COMP') boxes['COMP'].querySelector("input[type='text']").required = true;
+                if(tipoSeleccionado.includes('CORR')) {
+                    boxes['CORR'].querySelectorAll("input[type='text']").forEach(inp => inp.required = true);
+                }
+            }
+        }
+
+        // Escuchar el cambio de opción
+        selectTipo.addEventListener("change", actualizarFormulario);
+        
+        // Ejecutar al cargar la página por si hay un tipo preseleccionado
+        actualizarFormulario();
+    });
+</script>
+{% endblock %}

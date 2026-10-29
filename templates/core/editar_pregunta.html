@@ -1,0 +1,19 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto;">
+    <h2 style="color: #0B2545; border-bottom: 3px solid #E6A817; padding-bottom: 10px;">Editar Pregunta</h2>
+    
+    <form method="post" style="margin-top: 20px;">
+        {% csrf_token %}
+        <div style="display: grid; gap: 15px;">
+            {{ form.as_p }}
+        </div>
+        
+        <div style="margin-top: 30px; text-align: right;">
+            <a href="{% url 'ver_reportes' %}" style="color: #666; margin-right: 15px; text-decoration: none;">Cancelar</a>
+            <button type="submit" class="btn-dorado">Actualizar Pregunta</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

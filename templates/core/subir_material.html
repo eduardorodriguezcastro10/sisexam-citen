@@ -1,0 +1,128 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .upload-wrapper {
+        max-width: 800px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    .upload-header {
+        background: linear-gradient(135deg, #0B2545 0%, #1B3B6F 100%);
+        padding: 30px;
+        text-align: center;
+        color: white;
+    }
+    .upload-header h2 { margin: 0; font-size: 24px; color: #E6A817; }
+    .upload-header p { margin: 10px 0 0 0; color: #ccc; font-size: 14px; }
+    
+    .upload-body { padding: 40px; }
+    
+    .form-row { display: flex; gap: 20px; margin-bottom: 30px; }
+    .form-group { flex: 1; }
+    .form-group label { display: block; font-weight: bold; color: #0B2545; margin-bottom: 8px; font-size: 14px; }
+    .form-select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; }
+    .form-select:focus { border-color: #E6A817; }
+
+    .drop-zone {
+        border: 3px dashed #b0b0b0;
+        border-radius: 12px;
+        padding: 50px 20px;
+        text-align: center;
+        background: #f9f9f9;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .drop-zone:hover { background: #f0f4f8; border-color: #0B2545; }
+    .drop-zone input[type="file"] { display: none; }
+    .drop-zone i { font-size: 50px; color: #0B2545; margin-bottom: 15px; display: block; }
+    .drop-zone .text-main { font-size: 16px; font-weight: bold; color: #0B2545; }
+    .drop-zone .text-sub { font-size: 13px; color: #666; margin-top: 5px; }
+
+    .btn-upload {
+        display: block;
+        width: 100%;
+        background: linear-gradient(to bottom, #E6A817, #c99314);
+        color: #0B2545;
+        font-size: 16px;
+        font-weight: bold;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: 0.3s;
+    }
+    .btn-upload:hover { background: #c99314; color: white; transform: translateY(-2px); }
+    
+    .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 14px; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+</style>
+
+<div class="upload-wrapper">
+    <div class="upload-header">
+        <h2><i class="fa-solid fa-robot"></i> Generación Mágica con IA</h2>
+        <p>Sube tu material de estudio y nuestra Inteligencia Artificial creará el banco de preguntas por ti.</p>
+    </div>
+    
+    <div class="upload-body">
+        {% if mensaje_exito %}
+            <div class="alert alert-success"><i class="fa-solid fa-check-circle"></i> {{ mensaje_exito }}</div>
+        {% endif %}
+        {% if error %}
+            <div class="alert alert-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ form.curso.label }}:</label>
+                    {{ form.curso }}
+                </div>
+                <div class="form-group">
+                    <label>{{ form.anio.label }}:</label>
+                    {{ form.anio }}
+                </div>
+            </div>
+
+            <div class="drop-zone" onclick="document.getElementById('id_archivo').click();">
+                <label for="{{ form.archivo.id_for_label }}">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <div class="text-main">Haz clic aquí para buscar tu archivo</div>
+                    <div class="text-sub">Formatos soportados: .PDF, .DOCX, .PPTX (Máx. 4MB)</div>
+                </label>
+                {{ form.archivo }}
+            </div>
+            
+            <div id="nombre-archivo" style="text-align: center; margin-top: 15px; font-weight: bold; color: #0B2545; font-size: 14px;"></div>
+
+            <button type="submit" class="btn-upload">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Procesar y Generar Preguntas
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Script para mostrar el nombre del archivo de forma elegante
+    document.getElementById('{{ form.archivo.id_for_label }}').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || "";
+        const dropZone = document.querySelector('.drop-zone');
+        
+        if(fileName) {
+            document.getElementById('nombre-archivo').innerHTML = `<i class="fa-solid fa-file-lines" style="color: #E6A817;"></i> Archivo seleccionado: <span style="color: #2e7d32;">${fileName}</span>`;
+            dropZone.style.borderColor = "#2e7d32";
+            dropZone.style.background = "#e8f5e9";
+            dropZone.querySelector('.text-main').innerText = "¡Archivo listo para procesar!";
+        }
+    });
+</script>
+{% endblock %}

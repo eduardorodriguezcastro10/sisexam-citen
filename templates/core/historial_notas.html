@@ -1,0 +1,87 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .table-container { background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background-color: #0B2545; color: white; padding: 15px; font-weight: normal; }
+    td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .nota-buena { color: #2e7d32; font-weight: bold; font-size: 18px; }
+    .nota-mala { color: #c62828; font-weight: bold; font-size: 18px; }
+    
+    .btn-excel { background: #1D6F42; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; display: inline-block; transition: 0.2s; }
+    .btn-excel:hover { background: #14522f; color: white; }
+
+    .chart-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; width: 100%; max-width: 600px; height: 300px; margin-left: auto; margin-right: auto; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="color: #0B2545; margin: 0;">Historial de Notas</h2>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'exportar_notas_excel' %}" class="btn-excel"><i class="fa-solid fa-file-excel"></i> Exportar Notas</a>
+        <a href="{% url 'ver_reportes' %}" class="btn-dorado" style="background: #0B2545; color: white; padding: 8px 15px;"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    </div>
+</div>
+
+<div class="chart-box">
+    <h4 style="text-align: center; color: #0B2545; margin-top: 0; margin-bottom: 15px;">Top 5 Notas Promedio por Curso</h4>
+    <canvas id="chartNotasHistorial"></canvas>
+</div>
+
+{{ notas_data|json_script:"notas-historial-data" }}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const notasData = JSON.parse(document.getElementById('notas-historial-data').textContent);
+        new Chart(document.getElementById('chartNotasHistorial').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: notasData.labels,
+                datasets: [{ label: 'Nota Promedio', data: notasData.values, backgroundColor: '#0B2545', borderRadius: 5 }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 20 } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    });
+</script>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Alumno (Usuario)</th>
+                <th>Curso</th>
+                <th>Año</th>
+                <th>Nota Final</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in notas %}
+            <tr>
+                <td>{{ n.fecha_rendido|date:"d/m/Y H:i" }}</td>
+                <td><strong>{{ n.alumno.username }}</strong></td>
+                <td>{{ n.curso.nombre }} <br><small>({{ n.curso.especialidad.siglas }})</small></td>
+                <td>{{ n.anio }}</td>
+                <td>
+                    {% if n.nota >= 11 %}
+                        <span class="nota-buena">{{ n.nota }} / 20</span>
+                    {% else %}
+                        <span class="nota-mala">{{ n.nota }} / 20</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="padding: 40px; text-align: center; color: #999;">Aún no hay exámenes rendidos.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

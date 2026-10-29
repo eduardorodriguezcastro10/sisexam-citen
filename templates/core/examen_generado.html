@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .examen-hoja { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
+    .examen-header { text-align: center; border-bottom: 2px solid #0B2545; padding-bottom: 20px; margin-bottom: 30px; }
+    .nota-box { background: #F4F6F9; border: 2px solid #E6A817; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 30px; }
+    .nota-numero { font-size: 48px; font-weight: bold; color: #0B2545; margin: 0; }
+    .pregunta-bloque { margin-bottom: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 15px; }
+    .enunciado { font-weight: bold; color: #0B2545; font-size: 16px; margin-bottom: 10px; }
+    .opcion { padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; }
+    .opcion-correcta { background: #e8f5e9; color: #2e7d32; font-weight: bold; border-left: 4px solid #2e7d32; }
+    .respuesta-texto { background: #e3f2fd; color: #1565c0; padding: 5px 10px; border-radius: 4px; display: inline-block; font-weight: bold; }
+
+    @media print {
+        .navbar-citen, .btn-dorado, .dashboard-header, .no-print { display: none !important; }
+        body { background-color: white !important; }
+        .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        .examen-hoja { box-shadow: none !important; padding: 0 !important; border: none !important; }
+        .nota-box { border: 1px solid #000 !important; }
+    }
+</style>
+
+<div class="examen-hoja">
+    {% if error %}
+        <div style="background: #ffebee; color: #c62828; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3>{{ error }}</h3>
+            <a href="{% url 'ver_reportes' %}" style="color: #c62828; font-weight: bold;">Volver a intentar</a>
+        </div>
+    {% else %}
+        <div class="examen-header">
+            <h2 style="color: #0B2545; margin: 0;">EXAMEN FINAL RESUELTO</h2>
+            {% if curso_obj %}
+                <p style="color: #0B2545; font-size: 18px; margin-top: 10px; font-weight: bold;">
+                    {{ curso_obj.nombre }} ({{ curso_obj.especialidad.nombre }})
+                </p>
+                <p style="color: #666;">{{ anio_obj }} - CITEN</p>
+            {% else %}
+                <p style="color: #666; margin-top: 10px;">Generado manualmente - CITEN</p>
+            {% endif %}
+        </div>
+
+        <div class="nota-box">
+            <h3 style="color: #666; margin-top: 0;">Resultado de la Evaluación</h3>
+            <p class="nota-numero">{{ nota_final }} / 20</p>
+            <p style="color: #666;">Preguntas acertadas: {{ puntaje_obtenido }} de {{ total_preguntas }}</p>
+        </div>
+
+        {% for item in preguntas_resueltas %}
+        <div class="pregunta-bloque">
+            <div class="enunciado">{{ forloop.counter }}. {{ item.obj.enunciado }}</div>
+            <p style="font-size: 12px; color: #999; margin-top: -5px;">Curso: {{ item.obj.curso.nombre }} | Tipo: {{ item.obj.get_tipo_display }}</p>
+
+            {% if item.obj.tipo == 'OM' %}
+                {% for opcion in item.obj.opciones.all %}
+                    <div class="opcion {% if opcion.es_correcta %}opcion-correcta{% endif %}">
+                        {% if opcion.es_correcta %}✓{% else %}○{% endif %} {{ opcion.texto }}
+                    </div>
+                {% endfor %}
+                
+            {% elif item.obj.tipo == 'VF' %}
+                <div class="opcion {% if item.obj.contenido.correcta %}opcion-correcta{% endif %}">
+                    {% if item.obj.contenido.correcta %}✓ Verdadero{% else %}○ Verdadero{% endif %}
+                </div>
+                <div class="opcion {% if not item.obj.contenido.correcta %}opcion-correcta{% endif %}">
+                    {% if not item.obj.contenido.correcta %}✓ Falso{% else %}○ Falso{% endif %}
+                </div>
+
+            {% elif item.obj.tipo == 'COMP' %}
+                <div>Respuesta esperada: <span class="respuesta-texto">{{ item.obj.contenido.palabra }}</span></div>
+
+            {% elif item.obj.tipo == 'CORR' or item.obj.tipo == 'CORR_CAUSA' or item.obj.tipo == 'CORR_DEF' %}
+                <div style="margin-top: 10px;">
+                {% for a, b in item.obj.contenido.pares.items %}
+                    <div style="margin-bottom: 8px;">
+                        <span class="respuesta-texto">{{ a }}</span> ➔ <strong>{{ b }}</strong>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div style="text-align: center; margin-top: 30px;" class="no-print">
+            <button onclick="window.print()" class="btn-dorado" style="font-size: 18px; padding: 15px 30px;">
+                <i class="fa-solid fa-print"></i> Imprimir / Guardar en PDF
+            </button>
+            <a href="{% url 'ver_reportes' %}" class="btn-dorado" style="padding: 15px 30px; margin-left: 15px; background: #666; color: white;">Volver</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

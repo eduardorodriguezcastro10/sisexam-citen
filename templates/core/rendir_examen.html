@@ -1,0 +1,148 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .examen-hoja { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; position: relative; }
+    .examen-header { text-align: center; border-bottom: 2px solid #0B2545; padding-bottom: 20px; margin-bottom: 30px; }
+    .pregunta-bloque { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+    .enunciado { font-weight: bold; color: #0B2545; font-size: 16px; margin-bottom: 15px; }
+    
+    .opcion-label { display: block; padding: 10px 15px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .opcion-label:hover { background: #e3f2fd; border-color: #0B2545; }
+    .input-texto { padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 5px; margin-top: 5px; font-size: 14px; }
+    
+    .corr-container { background: #F4F6F9; padding: 20px; border-radius: 8px; border-left: 5px solid #E6A817; }
+    .corr-instruccion { font-size: 14px; color: #666; margin-bottom: 15px; font-style: italic; }
+    .corr-row { display: flex; align-items: center; margin-bottom: 12px; background: white; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+    .corr-clave { font-weight: bold; color: #0B2545; width: 35%; border-right: 2px solid #E6A817; padding-right: 10px; margin-right: 15px; }
+    .select-corr { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 14px; flex: 1; cursor: pointer; }
+    
+    .btn-enviar { display: block; width: 100%; text-align: center; background: #E6A817; color: #0B2545; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
+    .btn-enviar:hover { background: #c99314; color: white; transform: translateY(-2px); }
+
+    /* ESTILOS DEL TEMPORIZADOR */
+    .timer-floating {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #0B2545;
+        color: #E6A817;
+        padding: 15px 25px;
+        border-radius: 10px;
+        font-size: 24px;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        border: 2px solid #E6A817;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .timer-danger { background: #c62828; color: white; border-color: white; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    
+    @media print {
+        .navbar-citen, .btn-dorado, .dashboard-header, .no-print, .btn-enviar, .timer-floating { display: none !important; }
+        body { background-color: white !important; }
+        .examen-hoja { box-shadow: none !important; padding: 0 !important; border: none !important; }
+        .corr-container { border: 1px solid #000; }
+    }
+</style>
+
+<!-- RELOJ EN PANTALLA -->
+<div class="timer-floating" id="timer">
+    <i class="fa-solid fa-clock"></i> <span id="time-display">00:00</span>
+</div>
+
+<div class="examen-hoja">
+    <div class="examen-header">
+        <h2 style="color: #0B2545; margin: 0;">EXAMEN FINAL</h2>
+        <p style="color: #0B2545; font-size: 18px; margin-top: 10px; font-weight: bold;">{{ curso_obj.nombre }}</p>
+        <p style="color: #666;">{{ anio_obj }} | Alumno: {{ user.username }}</p>
+    </div>
+
+    <form method="POST" action="{% url 'calificar_examen' %}" id="examen-form">
+        {% csrf_token %}
+        {% for item in preguntas %}
+            {% with p=item.obj %}
+            <div class="pregunta-bloque">
+                <input type="hidden" name="pregunta_ids" value="{{ p.id }}">
+                <div class="enunciado">{{ forloop.counter }}. {{ p.enunciado }}</div>
+                
+                {% if p.tipo == 'OM' %}
+                    {% for opcion in p.opciones.all %}
+                        <label class="opcion-label">
+                            <input type="radio" name="om_{{ p.id }}" value="{{ opcion.id }}" required> {{ opcion.texto }}
+                        </label>
+                    {% endfor %}
+                {% elif p.tipo == 'VF' %}
+                    <label class="opcion-label"><input type="radio" name="vf_{{ p.id }}" value="true" required> Verdadero</label>
+                    <label class="opcion-label"><input type="radio" name="vf_{{ p.id }}" value="false" required> Falso</label>
+                {% elif p.tipo == 'COMP' %}
+                    <input type="text" name="comp_{{ p.id }}" class="input-texto" placeholder="Escriba la palabra..." required autocomplete="off">
+                {% elif p.tipo == 'CORR' or p.tipo == 'CORR_CAUSA' or p.tipo == 'CORR_DEF' %}
+                    <div class="corr-container">
+                        <div class="corr-instruccion"><i class="fa-solid fa-circle-info" style="color: #E6A817;"></i> Seleccione la opción que corresponde a cada concepto:</div>
+                        {% for clave, valor in p.contenido.pares.items %}
+                            <div class="corr-row">
+                                <div class="corr-clave">{{ clave }}</div>
+                                <select name="corr_{{ p.id }}_{{ forloop.counter0 }}" class="select-corr" required>
+                                    <option value="">-- Seleccione --</option>
+                                    {% for opt in item.opciones_corr %}
+                                        <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            {% endwith %}
+        {% endfor %}
+        
+        <button type="submit" class="btn-enviar no-print" id="btn-submit"><i class="fa-solid fa-paper-plane"></i> Terminar y Enviar Examen</button>
+    </form>
+</div>
+
+<!-- SCRIPT DEL TEMPORIZADOR -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Recibimos los minutos desde Django (si no hay, por defecto 30)
+        let tiempoMinutos = parseInt("{{ tiempo_minutos|default:30 }}");
+        let tiempoTotalSegundos = tiempoMinutos * 60;
+        
+        const display = document.getElementById("time-display");
+        const timerContainer = document.getElementById("timer");
+        const form = document.getElementById("examen-form");
+
+        function actualizarReloj() {
+            if (tiempoTotalSegundos <= 0) {
+                clearInterval(intervalo);
+                display.innerText = "00:00";
+                alert("¡El tiempo ha terminado! El examen se enviará automáticamente.");
+                form.submit();
+                return;
+            }
+
+            tiempoTotalSegundos--;
+
+            let minutos = Math.floor(tiempoTotalSegundos / 60);
+            let segundos = tiempoTotalSegundos % 60;
+
+            minutos = minutos < 10 ? "0" + minutos : minutos;
+            segundos = segundos < 10 ? "0" + segundos : segundos;
+
+            display.innerText = `${minutos}:${segundos}`;
+
+            // Si quedan menos de 5 minutos, el reloj se pone rojo y parpadea
+            if (tiempoTotalSegundos <= 300) {
+                timerContainer.classList.add("timer-danger");
+            }
+        }
+
+        // Iniciar el reloj
+        actualizarReloj();
+        const intervalo = setInterval(actualizarReloj, 1000);
+    });
+</script>
+{% endblock %}
