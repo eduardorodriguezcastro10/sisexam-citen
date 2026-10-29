@@ -4,7 +4,7 @@ Django settings for citen_system project.
 
 from pathlib import Path
 import os
-import dj_database_url # <-- NUEVO
+import dj_database_url 
 from dotenv import load_dotenv 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,10 +12,9 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = 'django-insecure-)nzu@#rq@&hhq3h3=e^lse4ig!jj0j2x0jz#+4@ipl^9m_6z)3'
 
-# En producción (Render) esto será False automáticamente. En tu PC será True.
-DEBUG = os.environ.get('RENDER', 'False') == 'False'
+# En tu PC será True. En PythonAnywhere lo cambiaremos a False.
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Permitir todos los host para que Render no bloquee la página
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -30,7 +29,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # <-- NUEVO: Para los archivos estáticos
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Para los archivos estáticos en producción
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -58,23 +57,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'citen_system.wsgi.application'
 
-# --- BASE DE DATOS ---
-# Si estamos en Render, usa la URL de la base de datos (PostgreSQL).
-# Si estamos en la PC, usa la configuración local.
+# =======================================================
+# CONFIGURACIÓN DE LA BASE DE DATOS
+# =======================================================
+# La magia está aquí: le decimos que si no encuentra una URL en internet, 
+# use por defecto tu base de datos local (para que sigas trabajando en VS Code).
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'citen_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Elbatuterry12',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default='postgresql://postgres:Elbatuterry12@localhost:5432/citen_db',
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
-
-# Si existe la variable de entorno DATABASE_URL (en Render), la usamos
-if os.environ.get('DATABASE_URL'):
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -88,19 +82,24 @@ TIME_ZONE = 'America/Lima'
 USE_I18N = True
 USE_TZ = True
 
-# --- ARCHIVOS ESTÁTICOS ---
+# =======================================================
+# ARCHIVOS ESTÁTICOS Y MULTIMEDIA
+# =======================================================
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
-# NUEVO: Carpeta donde Render guardará el CSS en producción
 STATIC_ROOT = BASE_DIR / 'staticfiles' 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Autenticación
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 
+# Claves de API
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+
+# Esto quita los avisos amarillos de la consola
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
