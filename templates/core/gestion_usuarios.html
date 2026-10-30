@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .table-container { background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background-color: #0B2545; color: white; padding: 15px; font-weight: normal; font-size: 14px; }
+    td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 14px; }
+    tr:hover td { background-color: #f9f9f9; }
+    
+    .badge-admin { background: #e3f2fd; color: #1565c0; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .badge-docente { background: #fff3e0; color: #e65100; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .badge-alumno { background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .badge-inactivo { background: #ffebee; color: #c62828; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    
+    .btn-action { text-decoration: none; padding: 8px 12px; border-radius: 5px; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; font-weight: bold; border: none; cursor: pointer; margin-right: 5px; }
+    .btn-edit { background: #E6A817; color: #0B2545; }
+    .btn-delete { background: #c62828; }
+    .btn-excel { background: #1D6F42; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="color: #0B2545; margin: 0;"><i class="fa-solid fa-users-gear" style="color: #E6A817;"></i> Gestión de Usuarios</h2>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'cargar_usuarios_excel' %}" class="btn-excel"><i class="fa-solid fa-file-excel"></i> Carga Masiva (Alumnos)</a>
+        <a href="{% url 'crear_usuario' %}" class="btn-dorado" style="padding: 10px 20px; text-decoration: none;"><i class="fa-solid fa-user-plus"></i> Nuevo Usuario</a>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Nombre Completo</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in usuarios %}
+            <tr>
+                <td><strong>{{ u.username }}</strong></td>
+                <td>{{ u.first_name }} {{ u.last_name }}</td>
+                <td>
+                    {% if u.is_superuser %}
+                        <span class="badge-admin">Administrador</span>
+                    {% elif u.groups.all.0.name == 'Docentes' %}
+                        <span class="badge-docente">Docente</span>
+                    {% else %}
+                        <span class="badge-alumno">Alumno</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.is_active %}
+                        <span style="color: #2e7d32; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> Activo</span>
+                    {% else %}
+                        <span class="badge-inactivo"><i class="fa-solid fa-ban"></i> Inactivo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'editar_usuario' u.id %}" class="btn-action btn-edit"><i class="fa-solid fa-pen"></i> Editar</a>
+                    {% if u != request.user %}
+                    <a href="{% url 'eliminar_usuario' u.id %}" class="btn-action btn-delete" onclick="return confirm('¿Estás seguro de eliminar a este usuario?');"><i class="fa-solid fa-trash"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px;">No hay usuarios registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

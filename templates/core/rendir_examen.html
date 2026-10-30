@@ -1,68 +1,67 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block contenido %}
 <style>
-    .examen-hoja { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; position: relative; }
+    /* Estilo para evitar selección de texto */
+    .examen-protegido {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .examen-hoja { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; position: relative; border-top: 6px solid #0B2545; }
     .examen-header { text-align: center; border-bottom: 2px solid #0B2545; padding-bottom: 20px; margin-bottom: 30px; }
-    .pregunta-bloque { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+    .pregunta-bloque { margin-bottom: 30px; border-bottom: 1px dashed #eee; padding-bottom: 20px; }
     .enunciado { font-weight: bold; color: #0B2545; font-size: 16px; margin-bottom: 15px; }
     
-    .opcion-label { display: block; padding: 10px 15px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .opcion-label { display: block; padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; background: #f9f9f9; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; font-size: 14px; }
     .opcion-label:hover { background: #e3f2fd; border-color: #0B2545; }
     .input-texto { padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 5px; margin-top: 5px; font-size: 14px; }
     
-    .corr-container { background: #F4F6F9; padding: 20px; border-radius: 8px; border-left: 5px solid #E6A817; }
+    .corr-container { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 5px solid #E6A817; }
     .corr-instruccion { font-size: 14px; color: #666; margin-bottom: 15px; font-style: italic; }
     .corr-row { display: flex; align-items: center; margin-bottom: 12px; background: white; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
     .corr-clave { font-weight: bold; color: #0B2545; width: 35%; border-right: 2px solid #E6A817; padding-right: 10px; margin-right: 15px; }
     .select-corr { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 14px; flex: 1; cursor: pointer; }
     
-    .btn-enviar { display: block; width: 100%; text-align: center; background: #E6A817; color: #0B2545; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
-    .btn-enviar:hover { background: #c99314; color: white; transform: translateY(-2px); }
-
-    /* ESTILOS DEL TEMPORIZADOR */
-    .timer-floating {
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: #0B2545;
-        color: #E6A817;
-        padding: 15px 25px;
-        border-radius: 10px;
-        font-size: 24px;
-        font-weight: bold;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        border: 2px solid #E6A817;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+    .btn-enviar { display: block; width: 100%; text-align: center; background: #0B2545; color: #E6A817; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
+    .btn-enviar:hover { background: #E6A817; color: #0B2545; transform: translateY(-2px); }
+    
+    .timer-floating { position: fixed; top: 20px; right: 20px; background: #0B2545; color: #E6A817; padding: 15px 25px; border-radius: 10px; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid #E6A817; z-index: 1000; display: flex; align-items: center; gap: 10px; }
     .timer-danger { background: #c62828; color: white; border-color: white; animation: pulse 1s infinite; }
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-    
-    @media print {
-        .navbar-citen, .btn-dorado, .dashboard-header, .no-print, .btn-enviar, .timer-floating { display: none !important; }
-        body { background-color: white !important; }
-        .examen-hoja { box-shadow: none !important; padding: 0 !important; border: none !important; }
-        .corr-container { border: 1px solid #000; }
-    }
 </style>
 
-<!-- RELOJ EN PANTALLA -->
-<div class="timer-floating" id="timer">
-    <i class="fa-solid fa-clock"></i> <span id="time-display">00:00</span>
-</div>
+{% if user.is_superuser or user.groups.all.0.name == 'Docentes' %}
+    <!-- SOLO PARA DOCENTES: Botón para imprimir el examen en blanco -->
+    <div class="no-print" style="text-align: right; max-width: 900px; margin: 0 auto 20px auto;">
+        <button onclick="window.print()" class="btn-dorado" style="padding: 10px 20px; background: #0B2545; color: white;">
+            <i class="fa-solid fa-print"></i> Imprimir Examen en Blanco (Físico)
+        </button>
+    </div>
+{% else %}
+    <!-- SOLO PARA ALUMNOS: Temporizador -->
+    <div class="timer-floating no-print" id="timer">
+        <i class="fa-solid fa-clock"></i> <span id="time-display">00:00</span>
+    </div>
+{% endif %}
 
-<div class="examen-hoja">
+<!-- CONTENEDOR PROTEGIDO CONTRA COPIA -->
+<div class="examen-hoja {% if not user.is_superuser and user.groups.all.0.name != 'Docentes' %}examen-protegido{% endif %}">
     <div class="examen-header">
-        <h2 style="color: #0B2545; margin: 0;">EXAMEN FINAL</h2>
+        <h2 style="color: #0B2545; margin: 0;">EXAMEN</h2>
         <p style="color: #0B2545; font-size: 18px; margin-top: 10px; font-weight: bold;">{{ curso_obj.nombre }}</p>
-        <p style="color: #666;">{{ anio_obj }} | Alumno: {{ user.username }}</p>
+        <p style="color: #666; font-size: 14px;">{{ anio_obj }} | Alumno: {{ user.username }}</p>
     </div>
 
     <form method="POST" action="{% url 'calificar_examen' %}" id="examen-form">
         {% csrf_token %}
+        {% if examen_asignado_id %}
+            <input type="hidden" name="examen_asignado_id" value="{{ examen_asignado_id }}">
+        {% endif %}
+
         {% for item in preguntas %}
             {% with p=item.obj %}
             <div class="pregunta-bloque">
@@ -71,15 +70,15 @@
                 
                 {% if p.tipo == 'OM' %}
                     {% for opcion in p.opciones.all %}
-                        <label class="opcion-label">
-                            <input type="radio" name="om_{{ p.id }}" value="{{ opcion.id }}" required> {{ opcion.texto }}
-                        </label>
+                        <label class="opcion-label"><input type="radio" name="om_{{ p.id }}" value="{{ opcion.id }}" required> {{ opcion.texto }}</label>
                     {% endfor %}
                 {% elif p.tipo == 'VF' %}
                     <label class="opcion-label"><input type="radio" name="vf_{{ p.id }}" value="true" required> Verdadero</label>
                     <label class="opcion-label"><input type="radio" name="vf_{{ p.id }}" value="false" required> Falso</label>
                 {% elif p.tipo == 'COMP' %}
                     <input type="text" name="comp_{{ p.id }}" class="input-texto" placeholder="Escriba la palabra..." required autocomplete="off">
+                {% elif p.tipo == 'LIBRE' %}
+                    <textarea name="libre_{{ p.id }}" class="input-texto" rows="4" placeholder="Escriba su respuesta..." required></textarea>
                 {% elif p.tipo == 'CORR' or p.tipo == 'CORR_CAUSA' or p.tipo == 'CORR_DEF' %}
                     <div class="corr-container">
                         <div class="corr-instruccion"><i class="fa-solid fa-circle-info" style="color: #E6A817;"></i> Seleccione la opción que corresponde a cada concepto:</div>
@@ -100,17 +99,18 @@
             {% endwith %}
         {% endfor %}
         
-        <button type="submit" class="btn-enviar no-print" id="btn-submit"><i class="fa-solid fa-paper-plane"></i> Terminar y Enviar Examen</button>
+        <button type="submit" class="btn-enviar no-print"><i class="fa-solid fa-paper-plane"></i> Terminar y Enviar Examen</button>
     </form>
 </div>
 
-<!-- SCRIPT DEL TEMPORIZADOR -->
+{% if not user.is_superuser and user.groups.all.0.name != 'Docentes' %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Recibimos los minutos desde Django (si no hay, por defecto 30)
+        /* =========================================
+           1. LÓGICA DEL TEMPORIZADOR
+           ========================================= */
         let tiempoMinutos = parseInt("{{ tiempo_minutos|default:30 }}");
         let tiempoTotalSegundos = tiempoMinutos * 60;
-        
         const display = document.getElementById("time-display");
         const timerContainer = document.getElementById("timer");
         const form = document.getElementById("examen-form");
@@ -123,26 +123,71 @@
                 form.submit();
                 return;
             }
-
             tiempoTotalSegundos--;
-
             let minutos = Math.floor(tiempoTotalSegundos / 60);
             let segundos = tiempoTotalSegundos % 60;
-
             minutos = minutos < 10 ? "0" + minutos : minutos;
             segundos = segundos < 10 ? "0" + segundos : segundos;
-
             display.innerText = `${minutos}:${segundos}`;
-
-            // Si quedan menos de 5 minutos, el reloj se pone rojo y parpadea
-            if (tiempoTotalSegundos <= 300) {
-                timerContainer.classList.add("timer-danger");
-            }
+            if (tiempoTotalSegundos <= 300) { timerContainer.classList.add("timer-danger"); }
         }
-
-        // Iniciar el reloj
         actualizarReloj();
         const intervalo = setInterval(actualizarReloj, 1000);
+
+        /* =========================================
+           2. MODO ANTI-COPIA (SISTEMA DE SEGURIDAD)
+           ========================================= */
+        
+        // A. Bloquear Clic Derecho
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // B. Bloquear atajos de teclado (Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+U)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'u')) {
+                e.preventDefault();
+                Swal.fire({
+                    toast: true, position: 'top-end', icon: 'warning',
+                    title: 'Acción no permitida durante el examen', showConfirmButton: false, timer: 2000
+                });
+            }
+            // Bloquear F12 (Herramientas de desarrollador)
+            if (e.key === 'F12') {
+                e.preventDefault();
+            }
+        });
+
+        // C. Detectar si el alumno cambia de pestaña o minimiza la ventana
+        let advertencias = 0;
+        let examenEnviado = false;
+
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden && !examenEnviado) {
+                advertencias++;
+                
+                if (advertencias >= 3) {
+                    examenEnviado = true;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Examen Cancelado',
+                        text: 'Has salido de la pestaña del examen 3 veces. El examen se enviará automáticamente.',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        timer: 3000
+                    }).then(() => {
+                        form.submit();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: `¡Advertencia ${advertencias} de 3!`,
+                        text: 'Has salido de la pestaña del examen. Si vuelves a hacerlo, el examen se enviará automáticamente.',
+                        confirmButtonColor: '#c62828',
+                        confirmButtonText: 'Entendido, volver al examen'
+                    });
+                }
+            }
+        });
     });
 </script>
+{% endif %}
 {% endblock %}

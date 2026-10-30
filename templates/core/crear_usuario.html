@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .form-wrapper { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px; margin: 0 auto; border-top: 6px solid #0B2545; }
+    .form-header { color: #0B2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 15px; margin-bottom: 30px; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
+    .form-group label { font-weight: bold; color: #0B2545; margin-bottom: 8px; font-size: 14px; }
+    .form-control { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; font-size: 14px; transition: 0.3s; background-color: #f9f9f9; }
+    .form-control:focus { border-color: #0B2545; background-color: #fff; outline: none; box-shadow: 0 0 8px rgba(11, 37, 69, 0.1); }
+    .btn-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+    .btn-cancel { background: #f0f0f0; color: #666; padding: 12px 25px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: 0.2s; }
+    .btn-cancel:hover { background: #e0e0e0; color: #333; }
+    .error-list { color: #c62828; font-size: 13px; margin-top: 5px; padding-left: 20px; }
+</style>
+
+<div class="form-wrapper">
+    <h2 class="form-header"><i class="fa-solid fa-user-plus" style="color: #E6A817;"></i> Crear Nuevo Usuario</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>{{ form.username.label }}:</label>
+            {{ form.username }}
+            {% if form.username.errors %}<div class="error-list">{{ form.username.errors }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.first_name.label }}:</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<div class="error-list">{{ form.first_name.errors }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.last_name.label }}:</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<div class="error-list">{{ form.last_name.errors }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.email.label }}:</label>
+            {{ form.email }}
+            {% if form.email.errors %}<div class="error-list">{{ form.email.errors }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.rol.label }}:</label>
+            {{ form.rol }}
+            {% if form.rol.errors %}<div class="error-list">{{ form.rol.errors }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.password1.label }}:</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}<div class="error-list">{{ form.password1.errors }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.password2.label }}:</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}<div class="error-list">{{ form.password2.errors }}</div>{% endif %}
+        </div>
+
+        <div class="btn-actions">
+            <a href="{% url 'gestionar_usuarios' %}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-dorado" style="padding: 12px 35px; font-size: 16px;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Usuario
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

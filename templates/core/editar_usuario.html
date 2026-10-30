@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .form-wrapper { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px; margin: 0 auto; border-top: 6px solid #0B2545; }
+    .form-header { color: #0B2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 15px; margin-bottom: 30px; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
+    .form-group label { font-weight: bold; color: #0B2545; margin-bottom: 8px; font-size: 14px; }
+    .form-control { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; font-size: 14px; transition: 0.3s; background-color: #f9f9f9; }
+    .form-control:focus { border-color: #0B2545; background-color: #fff; outline: none; box-shadow: 0 0 8px rgba(11, 37, 69, 0.1); }
+    .btn-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+    .btn-cancel { background: #f0f0f0; color: #666; padding: 12px 25px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: 0.2s; }
+    .btn-cancel:hover { background: #e0e0e0; color: #333; }
+</style>
+
+<div class="form-wrapper">
+    <h2 class="form-header"><i class="fa-solid fa-user-pen" style="color: #E6A817;"></i> Editar Usuario</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>Nombre de Usuario:</label>
+            {{ form.username }}
+        </div>
+
+        <div class="form-group">
+            <label>Nombres:</label>
+            {{ form.first_name }}
+        </div>
+
+        <div class="form-group">
+            <label>Apellidos:</label>
+            {{ form.last_name }}
+        </div>
+
+        <div class="form-group">
+            <label>Correo Electrónico:</label>
+            {{ form.email }}
+        </div>
+
+        <!-- ROLES Y PERMISOS -->
+        <div class="form-group" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+            <label>Nivel de Acceso / Rol:</label>
+            {{ form.rol }}
+            <small style="color: #666; margin-top: 5px;">Al cambiar el rol, los permisos y el menú que verá el usuario cambiarán automáticamente.</small>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffe0b2;">
+            {{ form.activo }}
+            <label style="margin: 0; cursor: pointer;">Usuario Activo (Puede iniciar sesión)</label>
+        </div>
+
+        <div class="btn-actions">
+            <a href="{% url 'gestionar_usuarios' %}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-dorado" style="padding: 12px 35px; font-size: 16px;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

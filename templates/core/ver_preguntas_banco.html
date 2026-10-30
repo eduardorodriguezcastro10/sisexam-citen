@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .table-container { background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background-color: #0B2545; color: white; padding: 15px; font-weight: normal; }
+    td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: top; }
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .badge-om { background: #e3f2fd; color: #1565c0; }
+    .badge-vf { background: #e8f5e9; color: #2e7d32; }
+    .badge-comp { background: #fff3e0; color: #e65100; }
+    .badge-corr { background: #f3e5f5; color: #6a1b9a; }
+    .badge-libre { background: #fce4ec; color: #ad1457; }
+    
+    .badge-facil { background: #e8f5e9; color: #2e7d32; }
+    .badge-intermedio { background: #fff3e0; color: #e65100; }
+    .badge-dificil { background: #ffebee; color: #c62828; }
+
+    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; align-items: center; }
+    .pagination a, .pagination span { padding: 8px 15px; background: white; border: 1px solid #ddd; border-radius: 5px; text-decoration: none; color: #0B2545; font-weight: bold; }
+    .pagination .current { background: #0B2545; color: white; }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="color: #0B2545;">Preguntas del Banco: <span style="color: #E6A817;">{{ nombre_archivo }}</span></h2>
+    <a href="{% url 'bancos_preguntas' %}" class="btn-dorado" style="background: #0B2545; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+        <i class="fa-solid fa-arrow-left"></i> Volver a Bancos
+    </a>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>Nivel</th>
+                <th>Enunciado</th>
+                <th>Opciones / Respuesta</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in preguntas %}
+            <tr>
+                <td>
+                    {% if p.tipo == 'OM' %}<span class="badge badge-om">Opción Múltiple</span>
+                    {% elif p.tipo == 'CORR' or p.tipo == 'CORR_CAUSA' or p.tipo == 'CORR_DEF' %}<span class="badge badge-corr">Correlación</span>
+                    {% elif p.tipo == 'VF' %}<span class="badge badge-vf">Verdadero/Falso</span>
+                    {% elif p.tipo == 'COMP' %}<span class="badge badge-comp">Completar</span>
+                    {% elif p.tipo == 'LIBRE' %}<span class="badge badge-libre">Libre</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if p.nivel == 'FACIL' %}<span class="badge badge-facil">Fácil</span>
+                    {% elif p.nivel == 'INTERMEDIO' %}<span class="badge badge-intermedio">Intermedio</span>
+                    {% elif p.nivel == 'DIFICIL' %}<span class="badge badge-dificil">Difícil</span>
+                    {% endif %}
+                </td>
+                <td>{{ p.enunciado }}</td>
+                <td>
+                    {% if p.tipo == 'OM' %}
+                        <ul style="margin: 0; padding-left: 15px;">
+                        {% for op in p.opciones.all %}
+                            <li style="{% if op.es_correcta %}color: #2e7d32; font-weight: bold;{% endif %}">
+                                {{ op.texto }} {% if op.es_correcta %}(Correcta){% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% elif p.tipo == 'VF' %}
+                        Respuesta: <strong>{% if p.contenido.correcta %}Verdadero{% else %}Falso{% endif %}</strong>
+                    {% elif p.tipo == 'COMP' %}
+                        Respuesta: <strong>{{ p.contenido.palabra }}</strong>
+                    {% elif p.tipo == 'CORR' or p.tipo == 'CORR_CAUSA' or p.tipo == 'CORR_DEF' %}
+                        <ul style="margin: 0; padding-left: 15px;">
+                        {% for clave, valor in p.contenido.pares.items %}
+                            <li>{{ clave }} ➔ <strong>{{ valor }}</strong></li>
+                        {% endfor %}
+                        </ul>
+                    {% elif p.tipo == 'LIBRE' %}
+                        Respuesta modelo: <strong>{{ p.contenido.respuesta_modelo }}</strong>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 40px;">No hay preguntas cargadas de este archivo.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación -->
+{% if preguntas.has_other_pages %}
+<div class="pagination">
+    {% if preguntas.has_previous %}
+        <a href="?page={{ preguntas.previous_page_number }}">&laquo; Anterior</a>
+    {% endif %}
+    
+    <span class="current">Página {{ preguntas.number }} de {{ preguntas.paginator.num_pages }}</span>
+    
+    {% if preguntas.has_next %}
+        <a href="?page={{ preguntas.next_page_number }}">Siguiente &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

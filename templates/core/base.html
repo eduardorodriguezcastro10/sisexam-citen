@@ -3,80 +3,127 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema CITEN - Banco de Preguntas</title>
-    <!-- Fuentes e Iconos -->
+    <title>{% block title %}SISEXAM - CITEN{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 CSS y JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; display: flex; min-height: 100vh; }
+
+        /* SIDEBAR LATERAL */
+        .sidebar { width: 260px; background: linear-gradient(180deg, #0B2545 0%, #1B3B6F 100%); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; left: 0; top: 0; z-index: 1000; box-shadow: 4px 0 10px rgba(0,0,0,0.1); }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background-color: #0B2545; }
+        .sidebar-header img { width: 70px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .sidebar-header h2 { font-size: 18px; color: #E6A817; letter-spacing: 1px; }
+        .sidebar-header p { font-size: 11px; color: #aaa; margin-top: 5px; }
+        .user-info { padding: 15px 20px; background: rgba(255,255,255,0.05); display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .user-info i { font-size: 30px; color: #E6A817; }
+        .user-info .name { font-weight: bold; font-size: 14px; display: block; }
+        .user-info .role { font-size: 11px; color: #ccc; }
+        .nav-menu { flex: 1; overflow-y: auto; padding: 15px 0; }
+        .nav-section { padding: 10px 20px; font-size: 11px; text-transform: uppercase; color: #E6A817; font-weight: bold; letter-spacing: 1px; margin-top: 10px; }
+        .nav-item { display: flex; align-items: center; gap: 15px; padding: 12px 20px; color: #ddd; text-decoration: none; font-size: 14px; transition: all 0.3s ease; border-left: 4px solid transparent; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: #E6A817; }
+        .nav-item i { width: 20px; text-align: center; font-size: 16px; }
+        .logout-btn { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn form button { width: 100%; background: #c62828; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; }
+        .logout-btn form button:hover { background: #b71c1c; }
+
+        /* ÁREA DE CONTENIDO */
+        .main-content { margin-left: 260px; flex: 1; padding: 30px; min-height: 100vh; background-color: #f4f6f9; }
+        .btn-dorado { background: linear-gradient(to bottom, #E6A817, #c99314); color: #0B2545; text-decoration: none; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; display: inline-block; padding: 10px 20px; }
+        .btn-dorado:hover { background: #c99314; color: white; }
+
+        /* REGLAS PARA IMPRESIÓN (PDF) */
+        @media print {
+            body { background: white !important; }
+            .sidebar, .no-print, .btn-dorado, .navbar-citen { display: none !important; }
+            .main-content { margin-left: 0 !important; padding: 0 !important; }
+            .card-panel, .examen-hoja, .resultado-hoja { box-shadow: none !important; border: none !important; padding: 0 !important; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Menú Superior -->
-    <nav class="navbar-citen">
-        <h1>Sistema de Exámenes <span>CITEN</span></h1>
-        
-        <div style="display: flex; align-items: center; gap: 15px;">
-            {% if user.is_authenticated %}
-                <div style="color: white; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px;">
-                    <i class="fa-solid fa-circle-user" style="font-size: 24px; color: #E6A817;"></i>
-                    <div>
-                        <span style="display: block; font-size: 14px; font-weight: bold;">{{ user.username }}</span>
-                        <span style="display: block; font-size: 11px; color: #ccc;">Docente / Alumno</span>
-                    </div>
-                </div>
+    <!-- MENÚ LATERAL -->
+    <nav class="sidebar no-print">
+        <div class="sidebar-header">
+            <img src="{% static 'insignia_citen.jpg' %}" alt="CITEN">
+            <h2>SISEXAM</h2>
+            <p>Sistema de Exámenes</p>
+        </div>
+
+        <div class="user-info">
+            <i class="fa-solid fa-circle-user"></i>
+            <div>
+                <span class="name">{{ user.username }}</span>
+                <span class="role">{% if user.is_superuser %}Administrador{% elif user.groups.all.0.name == 'Docentes' %}Docente{% else %}Alumno{% endif %}</span>
+            </div>
+        </div>
+
+        <div class="nav-menu">
+            <a href="{% url 'home' %}" class="nav-item"><i class="fa-solid fa-house"></i> Inicio / Dashboard</a>
+
+            {% if user.is_superuser or user.groups.all.0.name == 'Docentes' %}
+                <div class="nav-section">Académico</div>
+                <a href="{% url 'registrar_pregunta' %}" class="nav-item"><i class="fa-solid fa-keyboard"></i> Registro Manual</a>
+                <a href="{% url 'subir_material' %}" class="nav-item"><i class="fa-solid fa-robot"></i> Generación con IA</a>
+                <a href="{% url 'bancos_preguntas' %}" class="nav-item"><i class="fa-solid fa-file-excel"></i> Carga Masiva (Excel)</a>
                 
-                <!-- BOTÓN DE SALIR (POST) -->
-                <form action="{% url 'logout' %}" method="post" style="display: inline; margin: 0;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-dorado" style="padding: 8px 15px; font-size: 14px; box-shadow: none; border: none; cursor: pointer;">
-                        <i class="fa-solid fa-right-from-bracket"></i> Salir
-                    </button>
-                </form>
+                <div class="nav-section">Evaluaciones</div>
+                <a href="{% url 'ver_reportes' %}" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Reportes y Estadísticas</a>
+                <a href="{% url 'ver_historial_notas' %}" class="nav-item"><i class="fa-solid fa-clipboard-list"></i> Historial de Notas</a>
+                
+                {% if user.is_superuser %}
+                <div class="nav-section">Sistema</div>
+                <a href="{% url 'gestionar_usuarios' %}" class="nav-item"><i class="fa-solid fa-users-gear"></i> Gestión de Usuarios</a>
+                <a href="/admin/" class="nav-item"><i class="fa-solid fa-gears"></i> Administración BD</a>
+                {% endif %}
+            {% else %}
+                <div class="nav-section">Mis Evaluaciones</div>
+                <a href="{% url 'home' %}" class="nav-item active"><i class="fa-solid fa-list-check"></i> Exámenes Pendientes</a>
             {% endif %}
+            
+            <!-- NUEVO: BOTÓN PARA CAMBIAR CONTRASEÑA -->
+            <div class="nav-section">Mi Cuenta</div>
+            <a href="{% url 'cambiar_password' %}" class="nav-item"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+        </div>
+
+        <div class="logout-btn">
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </form>
         </div>
     </nav>
 
-    <!-- Contenedor invisible para los mensajes (Esto evita el error en VS Code) -->
+    <main class="main-content">
+        {% block contenido %}
+        {% endblock %}
+    </main>
+
     <div id="django-messages" style="display: none;">
         {% for message in messages %}
             <span data-type="{{ message.tags }}" data-text="{{ message|escapejs }}"></span>
         {% endfor %}
     </div>
 
-    <!-- Contenido de cada página -->
-    <div class="container" style="margin-bottom: 50px;">
-        {% block contenido %}
-        {% endblock %}
-    </div>
-
-    <!-- SCRIPT PARA MOSTRAR LOS MENSAJES COMO NOTIFICACIONES -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const contenedor = document.getElementById("django-messages");
-            
             if (contenedor) {
                 const mensajes = contenedor.querySelectorAll("span");
-                
                 mensajes.forEach(msg => {
                     let tipo = msg.getAttribute("data-type");
                     let texto = msg.getAttribute("data-text");
-                    
                     let icono = 'info';
                     if (tipo.includes('success')) icono = 'success';
                     else if (tipo.includes('error')) icono = 'error';
                     else if (tipo.includes('warning')) icono = 'warning';
 
                     Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: icono,
-                        title: texto,
-                        showConfirmButton: false,
-                        timer: 3500,
-                        timerProgressBar: true,
+                        toast: true, position: 'top-end', icon: icono, title: texto, showConfirmButton: false, timer: 3500, timerProgressBar: true,
                         didOpen: (toast) => {
                             toast.addEventListener('mouseenter', Swal.stopTimer)
                             toast.addEventListener('mouseleave', Swal.resumeTimer)
@@ -86,6 +133,5 @@
             }
         });
     </script>
-
 </body>
 </html>

@@ -1,0 +1,72 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .resultado-hoja { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
+    .header-info { background: #0B2545; color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { background: #f4f6f9; color: #0B2545; padding: 15px; text-align: left; border-bottom: 2px solid #0B2545; }
+    td { padding: 15px; border-bottom: 1px solid #eee; }
+    .badge-pendiente { background: #fff3e0; color: #e65100; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .badge-completado { background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .nota-alta { color: #2e7d32; font-size: 20px; font-weight: bold; }
+    .nota-baja { color: #c62828; font-size: 20px; font-weight: bold; }
+</style>
+
+<div class="resultado-hoja">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: #0B2545; margin: 0;">Estado del Examen</h2>
+        <a href="{% url 'bancos_preguntas' %}" class="btn-dorado" style="background: #0B2545; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px;"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    </div>
+
+    <div class="header-info">
+        <h3 style="margin: 0 0 10px 0;">{{ examen.titulo }}</h3>
+        <p style="margin: 0; color: #E6A817;">Curso: {{ examen.curso.nombre }} | Tiempo: {{ examen.tiempo_minutos }} min</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Alumno</th>
+                <th>Estado</th>
+                <th>Fecha de Rendición</th>
+                <th>Nota Final</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in lista_alumnos %}
+            <tr>
+                <td><strong>{{ item.alumno.username }}</strong></td>
+                <td>
+                    {% if item.resultado %}
+                        <span class="badge-completado"><i class="fa-solid fa-check"></i> Completado</span>
+                    {% else %}
+                        <span class="badge-pendiente"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.resultado %}
+                        {{ item.resultado.fecha_rendido|date:"d/m/Y H:i" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.resultado %}
+                        <span class="{% if item.resultado.nota >= 11 %}nota-alta{% else %}nota-baja{% endif %}">
+                            {{ item.resultado.nota }} / 20
+                        </span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 30px;">No hay alumnos registrados en el sistema para mostrar.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .revision-wrapper { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; border-top: 6px solid #1565c0; }
+    .revision-header { color: #0B2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+    .pregunta-box { background: #f8fafc; border-left: 5px solid #E6A817; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+    .pregunta-enunciado { font-weight: bold; color: #0B2545; font-size: 16px; margin-bottom: 15px; }
+    .respuesta-alumno { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 5px; font-style: italic; color: #444; margin-bottom: 15px; }
+    .input-puntaje { width: 100px; padding: 10px; border: 2px solid #ccc; border-radius: 5px; font-size: 16px; font-weight: bold; text-align: center; }
+    .btn-guardar { background: #2e7d32; color: white; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; width: 100%; margin-top: 20px; transition: 0.3s; }
+    .btn-guardar:hover { background: #1b5e20; }
+</style>
+
+<div class="revision-wrapper">
+    <div class="revision-header">
+        <h2 style="margin: 0;"><i class="fa-solid fa-pen-to-square" style="color: #1565c0;"></i> Revisión de Preguntas Libres</h2>
+        <a href="{% url 'ver_historial_notas' %}" class="btn-dorado" style="background: #0B2545; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px;"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    </div>
+
+    <div style="margin-bottom: 30px; background: #e3f2fd; padding: 15px; border-radius: 8px;">
+        <p style="margin: 0; color: #1565c0;"><strong>Alumno:</strong> {{ resultado.alumno.username }} | <strong>Curso:</strong> {{ resultado.curso.nombre }} | <strong>Nota Actual:</strong> {{ resultado.nota }} / 20</p>
+    </div>
+
+    <form method="POST" action="{% url 'guardar_revision_libres' resultado.id %}">
+        {% csrf_token %}
+        
+        {% for item in libres %}
+        <div class="pregunta-box">
+            <div class="pregunta-enunciado">{{ forloop.counter }}. {{ item.enunciado }}</div>
+            
+            <p style="font-weight: bold; color: #666; margin-bottom: 5px;">Respuesta del alumno:</p>
+            <div class="respuesta-alumno">
+                {{ item.respuesta_alumno|default:"(El alumno no respondió esta pregunta)" }}
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label style="font-weight: bold; color: #0B2545;">Puntaje asignado (0 a 1):</label>
+                <input type="number" name="puntaje_{{ forloop.counter0 }}" value="{{ item.puntaje_asignado }}" min="0" max="1" step="0.1" class="input-puntaje" required>
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-guardar">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Calificación y Recalcular Nota Final
+        </button>
+    </form>
+</div>
+{% endblock %}

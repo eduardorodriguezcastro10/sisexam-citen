@@ -1,0 +1,69 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    .form-wrapper { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 700px; margin: 0 auto; border-top: 6px solid #1D6F42; }
+    .form-header { color: #0B2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 15px; margin-bottom: 30px; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+    .upload-box { border: 3px dashed #b0b0b0; border-radius: 10px; padding: 40px 20px; text-align: center; background: #f9f9f9; cursor: pointer; transition: 0.3s; }
+    .upload-box:hover { background: #e8f5e9; border-color: #1D6F42; }
+    .upload-box input[type="file"] { display: none; }
+    .upload-box i { font-size: 50px; color: #1D6F42; margin-bottom: 15px; display: block; }
+    .btn-upload { display: block; width: 100%; background: #1D6F42; color: white; font-size: 16px; font-weight: bold; padding: 15px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+    .btn-upload:hover { background: #14522f; }
+    .info-box { background: #e3f2fd; border-left: 5px solid #1565c0; padding: 15px; border-radius: 5px; margin-bottom: 25px; color: #0d47a1; font-size: 14px; }
+    .btn-cancel { background: #f0f0f0; color: #666; padding: 12px 25px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: 0.2s; display: inline-block; text-align: center; width: 100%; margin-top: 10px; }
+    .btn-cancel:hover { background: #e0e0e0; color: #333; }
+</style>
+
+<div class="form-wrapper">
+    <h2 class="form-header"><i class="fa-solid fa-file-excel" style="color: #1D6F42;"></i> Carga Masiva de Alumnos</h2>
+    
+    <div class="info-box">
+        <strong>Instrucciones:</strong><br>
+        Sube un archivo Excel (.xlsx) con la siguiente estructura exacta en las primeras 4 columnas:
+        <ol style="margin: 5px 0 0 0; padding-left: 20px;">
+            <li><strong>Usuario (Username):</strong> Único, sin espacios.</li>
+            <li><strong>Nombres:</strong> Nombres del alumno.</li>
+            <li><strong>Apellidos:</strong> Apellidos del alumno.</li>
+            <li><strong>Correo:</strong> Correo electrónico (opcional).</li>
+        </ol>
+        <p style="margin-top: 10px; font-size: 13px; color: #c62828;">* La contraseña por defecto para todos será: <strong>Citen2024*</strong></p>
+    </div>
+
+    <!-- FORMULARIO CORREGIDO -->
+    <form method="POST" action="{% url 'cargar_usuarios_excel' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="upload-box" onclick="document.getElementById('id_archivo').click();">
+            <label for="id_archivo" style="cursor: pointer; display: block; margin: 0;">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <div style="font-size: 16px; font-weight: bold; color: #0B2545;" id="texto-upload">Haz clic aquí para buscar tu archivo Excel</div>
+                <div style="font-size: 13px; color: #666; margin-top: 5px;">Formatos soportados: .XLSX, .XLS</div>
+            </label>
+            <!-- INPUT CON EL ATRIBUTO NAME CORRECTO -->
+            <input type="file" name="archivo_excel" id="id_archivo" accept=".xlsx, .xls">
+        </div>
+        
+        <div id="nombre-archivo" style="text-align: center; margin-top: 15px; font-weight: bold; color: #1D6F42; font-size: 14px;"></div>
+
+        <button type="submit" class="btn-upload">
+            <i class="fa-solid fa-upload"></i> Procesar y Crear Alumnos
+        </button>
+        
+        <a href="{% url 'gestionar_usuarios' %}" class="btn-cancel">Cancelar</a>
+    </form>
+</div>
+
+<script>
+    document.getElementById('id_archivo').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || "";
+        const uploadBox = document.querySelector('.upload-box');
+        if(fileName) {
+            document.getElementById('nombre-archivo').innerHTML = `<i class="fa-solid fa-file-excel" style="color: #1D6F42;"></i> Archivo seleccionado: <span style="color: #1D6F42;">${fileName}</span>`;
+            uploadBox.style.borderColor = "#1D6F42";
+            uploadBox.style.background = "#e8f5e9";
+            document.getElementById('texto-upload').innerText = "¡Archivo listo para procesar!";
+        }
+    });
+</script>
+{% endblock %}

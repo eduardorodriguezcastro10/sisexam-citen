@@ -1,0 +1,172 @@
+{% extends 'core/base.html' %}
+
+{% block contenido %}
+<style>
+    /* Tarjetas de Estadísticas */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card {
+        background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        display: flex; align-items: center; gap: 15px; border-top: 4px solid #0B2545; transition: transform 0.3s;
+    }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-icon { font-size: 30px; color: #0B2545; background: #f4f6f9; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; border-radius: 50%; }
+    .stat-info h3 { margin: 0; font-size: 12px; color: #666; text-transform: uppercase; }
+    .stat-info .number { font-size: 26px; font-weight: bold; color: #0B2545; margin-top: 2px; }
+
+    /* Tarjetas de Contenedor */
+    .card-panel { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; border-left: 5px solid #E6A817; }
+    .card-panel h3 { color: #0B2545; margin-top: 0; margin-bottom: 15px; font-size: 18px; }
+
+    /* Tabla Moderna */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { background: #f4f6f9; color: #0B2545; padding: 12px; text-align: left; border-bottom: 2px solid #0B2545; font-size: 14px; }
+    td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 14px; }
+    tr:hover td { background: #fafafa; }
+    
+    .form-control-sm { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; width: 100%; }
+    .btn-accion { text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 13px; color: white; display: inline-flex; align-items: center; gap: 5px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+    .btn-accion:hover { opacity: 0.8; }
+
+    /* Formularios de Generación */
+    .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 150px; }
+    .form-group label { display: block; font-weight: bold; color: #0B2545; font-size: 13px; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+    <h2 style="color: #0B2545; margin: 0;"><i class="fa-solid fa-file-excel" style="color: #1D6F42;"></i> Gestión de Bancos Masivos</h2>
+    <a href="{% url 'home' %}" class="btn-dorado" style="background: #0B2545; color: white; text-decoration: none; padding: 10px 20px;"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card" style="border-top-color: #2e7d32;">
+        <div class="stat-icon" style="color: #2e7d32;"><i class="fa-solid fa-leaf"></i></div>
+        <div class="stat-info"><h3>Preguntas Fáciles</h3><div class="number">{{ stats.facil }}</div></div>
+    </div>
+    <div class="stat-card" style="border-top-color: #E6A817;">
+        <div class="stat-icon" style="color: #E6A817;"><i class="fa-solid fa-fire"></i></div>
+        <div class="stat-info"><h3>Preguntas Intermedias</h3><div class="number">{{ stats.intermedio }}</div></div>
+    </div>
+    <div class="stat-card" style="border-top-color: #c62828;">
+        <div class="stat-icon" style="color: #c62828;"><i class="fa-solid fa-skull"></i></div>
+        <div class="stat-info"><h3>Preguntas Difíciles</h3><div class="number">{{ stats.dificil }}</div></div>
+    </div>
+</div>
+
+<div class="card-panel">
+    <h3><i class="fa-solid fa-upload" style="color: #0B2545;"></i> 1. Subir Plantilla Excel</h3>
+    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Sube el archivo .xlsx con el formato establecido.</p>
+    <form method="POST" action="{% url 'subir_banco_excel' %}" enctype="multipart/form-data" style="display: flex; gap: 15px;">
+        {% csrf_token %}
+        <input type="file" name="archivo_excel" accept=".xlsx, .xls" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; flex: 1;">
+        <button type="submit" class="btn-dorado" style="padding: 10px 25px;">Subir Archivo</button>
+    </form>
+</div>
+
+<div class="card-panel" style="border-left-color: #1565c0;">
+    <h3><i class="fa-solid fa-cogs" style="color: #1565c0;"></i> 2. Procesar Bancos Disponibles</h3>
+    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Asigna un Curso, Año y Sección antes de procesar las preguntas del archivo.</p>
+    <table>
+        <thead><tr><th>Archivo</th><th>Curso</th><th>Año</th><th>Sección</th><th>Acción</th></tr></thead>
+        <tbody>
+            {% for archivo in archivos %}
+            <tr>
+                <td><strong>{{ archivo }}</strong></td>
+                <td>
+                    <form id="form-procesar-{{ forloop.counter }}" method="POST" action="{% url 'procesar_banco_excel' archivo %}">
+                        {% csrf_token %}
+                        <select name="curso" class="form-control-sm" required>
+                            <option value="">Seleccione...</option>
+                            {% for c in cursos %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                        </select>
+                </td>
+                <td>
+                        <select name="anio" class="form-control-sm" required>
+                            <option value="">Año...</option>
+                            {% for a in anios %}<option value="{{ a.id }}">{{ a }}</option>{% endfor %}
+                        </select>
+                </td>
+                <td>
+                        <select name="seccion" class="form-control-sm" required>
+                            <option value="">Sec...</option>
+                            {% for s in secciones %}<option value="{{ s.id }}">{{ s }}</option>{% endfor %}
+                        </select>
+                </td>
+                <td style="display: flex; gap: 5px;">
+                        <button type="submit" class="btn-accion" style="background: #E6A817; color: #0B2545;" onclick="return confirm('¿Cargar preguntas a este curso?');">
+                            <i class="fa-solid fa-database"></i> Cargar
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'ver_preguntas_banco' archivo %}" class="btn-accion" style="background: #1565c0; color: white;">
+                        <i class="fa-solid fa-eye"></i> Ver
+                    </a>
+
+                    <a href="{% url 'eliminar_banco_excel' archivo %}" class="btn-accion" style="background: #c62828; color: white;" onclick="return confirm('¡CUIDADO! Se eliminará el archivo y TODAS las preguntas cargadas de él. ¿Continuar?');">
+                        <i class="fa-solid fa-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align: center; padding: 20px;">No hay archivos subidos.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card-panel" style="border-left-color: #0B2545;">
+    <h3><i class="fa-solid fa-play" style="color: #0B2545;"></i> 3. Generar Examen por Porcentajes</h3>
+    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Configura los parámetros y decide si quieres solo imprimirlo o asignarlo a los alumnos.</p>
+    <form method="POST" action="{% url 'generar_examen_porcentajes' %}">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group"><label>Curso:</label><select name="curso" required><option value="">Seleccione...</option>{% for c in cursos %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}</select></div>
+            <div class="form-group"><label>Año:</label><select name="anio" required><option value="">Seleccione...</option>{% for a in anios %}<option value="{{ a.id }}">{{ a }}</option>{% endfor %}</select></div>
+            <div class="form-group"><label>Banco (Opcional):</label><select name="banco_filtro"><option value="">Todos los bancos</option>{% for a in archivos %}<option value="{{ a }}">{{ a }}</option>{% endfor %}</select></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Cantidad Total:</label><input type="number" name="total_preguntas" value="20" min="1"></div>
+            <div class="form-group"><label>Tiempo (Minutos):</label><input type="number" name="tiempo_minutos" value="30" min="1"></div>
+            <div class="form-group"><label>% Fáciles:</label><input type="number" name="porc_facil" value="70" min="0" max="100"></div>
+            <div class="form-group"><label>% Intermedias:</label><input type="number" name="porc_intermedio" value="20" min="0" max="100"></div>
+            <div class="form-group"><label>% Difíciles:</label><input type="number" name="porc_dificil" value="10" min="0" max="100"></div>
+        </div>
+        
+        <div style="margin-bottom: 20px; background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #2e7d32;">
+            <label style="font-weight: bold; color: #2e7d32; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="guardar_examen" style="width: 20px; height: 20px;">
+                Guardar y Asignar este examen a los alumnos (Aparecerá en su menú como tarea pendiente)
+            </label>
+        </div>
+
+        <button type="submit" class="btn-dorado" style="width: 100%; padding: 15px; font-size: 16px; background: #0B2545; color: white;">
+            <i class="fa-solid fa-bolt"></i> Generar Examen
+        </button>
+    </form>
+</div>
+
+<div class="card-panel" style="border-left-color: #2e7d32;">
+    <h3><i class="fa-solid fa-clipboard-check" style="color: #2e7d32;"></i> 4. Exámenes Asignados y Estado</h3>
+    <table>
+        <thead><tr><th>Título</th><th>Curso</th><th>Tiempo</th><th>Creado</th><th>Acciones</th></tr></thead>
+        <tbody>
+            {% for ex in examenes_creados %}
+            <tr>
+                <td><strong>{{ ex.titulo }}</strong></td>
+                <td>{{ ex.curso.nombre }}</td>
+                <td>{{ ex.tiempo_minutos }} min</td>
+                <td>{{ ex.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'ver_resultados_examen' ex.id %}" class="btn-accion" style="background: #1565c0; color: white;">
+                        <i class="fa-solid fa-eye"></i> Ver Resultados
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align: center; padding: 20px;">No has asignado ningún examen aún.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
