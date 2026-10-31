@@ -16,9 +16,20 @@ class PreguntaForm(forms.ModelForm):
         }
 
 class SubirArchivoForm(forms.Form):
-    curso = forms.ModelChoiceField(queryset=Curso.objects.all(), label="Curso Destino", widget=forms.Select(attrs={'class': 'form-control'}))
-    anio = forms.ModelChoiceField(queryset=Anio.objects.all(), label="Año Destino", widget=forms.Select(attrs={'class': 'form-control'}))
-    archivo = forms.FileField(label="Seleccione un archivo (PDF, DOCX, PPTX)", widget=forms.FileInput(attrs={'class': 'form-control'}))
+    curso = forms.ModelChoiceField(queryset=Curso.objects.all(), label="Curso", widget=forms.Select(attrs={'class': 'form-control'}))
+    anio = forms.ModelChoiceField(queryset=Anio.objects.all(), label="Año", widget=forms.Select(attrs={'class': 'form-control'}))
+    archivo = forms.FileField(label="Archivo (PDF, DOCX, PPTX)", widget=forms.FileInput(attrs={'class': 'form-control'}))
+    
+    # NUEVOS CAMPOS DE CONFIGURACIÓN DEL EXAMEN IA
+    cantidad = forms.IntegerField(min_value=1, max_value=30, initial=10, label="Cantidad de Preguntas", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    porc_facil = forms.IntegerField(min_value=0, max_value=100, initial=40, label="% Fáciles", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    porc_intermedio = forms.IntegerField(min_value=0, max_value=100, initial=40, label="% Intermedias", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    porc_dificil = forms.IntegerField(min_value=0, max_value=100, initial=20, label="% Difíciles", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    
+    incluir_om = forms.BooleanField(required=False, initial=True, label="Opción Múltiple", widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    incluir_vf = forms.BooleanField(required=False, initial=True, label="Verdadero/Falso", widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    incluir_comp = forms.BooleanField(required=False, initial=True, label="Completar palabra", widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    incluir_corr = forms.BooleanField(required=False, initial=True, label="Correlación", widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
 
 class UsuarioForm(UserCreationForm):
     ROL_CHOICES = (('Docentes', 'Docente'), ('Alumnos', 'Alumno'))

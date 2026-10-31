@@ -17,7 +17,7 @@ from openai import OpenAI
 from django.db.models import Avg
 from django.contrib.auth.models import User, Group
 
-from .forms import PreguntaForm, SubirArchivoForm, UsuarioForm, EditarUsuarioForm
+from .forms import PreguntaForm, SubirArchivoForm, UsuarioForm, EditarUsuarioForm, CambiarPasswordForm
 from .models import Pregunta, Opcion, Especialidad, Curso, Anio, Seccion, ResultadoExamen, ExamenAsignado
 
 def docente_required(view_func):
@@ -126,63 +126,43 @@ def eliminar_usuario(request, usuario_id):
         messages.success(request, "Usuario eliminado correctamente.")
     return redirect('gestionar_usuarios')
 
-# --- CARGA MASIVA DE ALUMNOS ---
 @login_required
 @docente_required
 def cargar_usuarios_excel(request):
     if not request.user.is_superuser: return redirect('home')
-    
     if request.method == 'POST':
         archivo = request.FILES.get('archivo_excel')
-        
         if not archivo:
             messages.error(request, "Por favor, selecciona un archivo Excel antes de presionar procesar.")
             return render(request, 'core/cargar_usuarios.html')
-            
         try:
             wb = openpyxl.load_workbook(archivo, data_only=True)
             hoja = wb.active
-            
             grupo_alumnos, _ = Group.objects.get_or_create(name='Alumnos')
             creados = 0
             errores = 0
-            
             for row in hoja.iter_rows(min_row=2, values_only=True):
                 if not row or not row[0]: continue
-                
                 username = str(row[0]).strip() if row[0] else ''
                 first_name = str(row[1]).strip() if len(row) > 1 and row[1] else ''
                 last_name = str(row[2]).strip() if len(row) > 2 and row[2] else ''
                 email = str(row[3]).strip() if len(row) > 3 and row[3] else ''
-                
                 if not username: continue
-                
                 if User.objects.filter(username=username).exists():
                     errores += 1
                     continue
-                
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password='Citen2024*'
-                )
+                user = User.objects.create_user(username=username, email=email, password='Citen2024*')
                 user.first_name = first_name
                 user.last_name = last_name
                 user.save()
                 user.groups.add(grupo_alumnos)
                 creados += 1
-                
-            if creados > 0:
-                messages.success(request, f"¡Éxito! Se crearon {creados} alumnos. Contraseña por defecto: Citen2024*")
-            if errores > 0:
-                messages.warning(request, f"Se omitieron {errores} usuarios porque ya existían en el sistema.")
-                
+            if creados > 0: messages.success(request, f"¡Éxito! Se crearon {creados} alumnos. Contraseña por defecto: Citen2024*")
+            if errores > 0: messages.warning(request, f"Se omitieron {errores} usuarios porque ya existían.")
             return redirect('gestionar_usuarios')
-            
         except Exception as e:
             messages.error(request, f"Error al leer el archivo Excel: {str(e)}")
             return render(request, 'core/cargar_usuarios.html')
-            
     return render(request, 'core/cargar_usuarios.html')
 
 # ==========================================
@@ -244,36 +224,113 @@ def subir_material(request):
                 texto = extraer_texto(archivo)
                 if not texto.strip(): return render(request, 'core/subir_material.html', {'form': form, 'error': "El archivo no tiene texto legible."})
                 
-                texto_recortado = texto[:4000]
+                texto_recortado = texto[:6000] # Aumentamos un poco el límite
                 api_key = os.getenv('GROQ_API_KEY')
                 if not api_key: return render(request, 'core/subir_material.html', {'form': form, 'error': "Falta configurar la API KEY en .env"})
                 
+                # Extraer variables del formulario
+                cantidad = form.cleaned_data['cantidad']
+                porc_facil = form.cleaned_data['porc_facil']
+                porc_intermedio = form.cleaned_data['porc_intermedio']
+                porc_dificil = form.cleaned_data['porc_dificil']
+                
+                tipos = []
+                if form.cleaned_data['incluir_om']: tipos.append("OM")
+                if form.cleaned_data['incluir_vf']: tipos.append("VF")
+                if form.cleaned_data['incluir_comp']: tipos.append("COMP")
+                if form.cleaned_data['incluir_corr']: tipos.append("CORR")
+                if not tipos: tipos = ["OM"] # Por defecto
+                
+                tipos_str = ", ".join(tipos)
+                
+                # Calcular cantidades exactas
+                cant_facil = round(cantidad * (porc_facil / 100))
+                cant_intermedio = round(cantidad * (porc_intermedio / 100))
+                cant_dificil = cantidad - cant_facil - cant_intermedio
+
                 client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+                
+                prompt_sistema = f"""
+                Eres un profesor experto. A partir del texto, genera exactamente {cantidad} preguntas.
+                Niveles de dificultad requeridos:
+                - {cant_facil} de nivel 'FACIL'
+                - {cant_intermedio} de nivel 'INTERMEDIO'
+                - {cant_dificil} de nivel 'DIFICIL'
+                
+                Tipos de pregunta permitidos: {tipos_str}.
+                
+                REGLAS POR TIPO:
+                - Si el tipo es 'OM' (Opción Múltiple): Rellena "opciones" (4 opciones) y "correcta" (índice del 0 al 3).
+                - Si el tipo es 'VF' (Verdadero/Falso): Rellena "correcta_bool" (true o false).
+                - Si el tipo es 'COMP' (Completar): Rellena "palabra" (la palabra faltante).
+                - Si el tipo es 'CORR' (Correlación): Rellena "pares" (un objeto JSON con 3 o 4 pares de conceptos).
+                
+                Devuelve EXCLUSIVAMENTE un JSON con esta estructura:
+                {{
+                  "preguntas": [
+                    {{
+                      "tipo": "OM",
+                      "nivel": "FACIL",
+                      "enunciado": "texto de la pregunta",
+                      "opciones": ["A", "B", "C", "D"],
+                      "correcta": 0,
+                      "correcta_bool": null,
+                      "palabra": null,
+                      "pares": null
+                    }}
+                  ]
+                }}
+                """
+                
                 respuesta = client.chat.completions.create(
                     model="openai/gpt-oss-20b", response_format={ "type": "json_object" }, 
                     messages=[
-                        {"role": "system", "content": "Eres un profesor experto. A partir del texto, genera exactamente 5 preguntas de opción múltiple. Devuelve un JSON estricto con esta estructura: {\"preguntas\": [{\"enunciado\": \"...\", \"opciones\": [\"A\", \"B\", \"C\", \"D\"], \"correcta\": 0}]}"},
+                        {"role": "system", "content": prompt_sistema},
                         {"role": "user", "content": texto_recortado}
                     ]
                 )
                 
                 datos_ia = json.loads(respuesta.choices[0].message.content)
-                preguntas_creadas = 0
                 curso_seleccionado, anio_seleccionado = form.cleaned_data['curso'], form.cleaned_data['anio']
                 seccion_default = Seccion.objects.first()
                 
+                preguntas_creadas = []
+                
                 for item in datos_ia.get('preguntas', []):
-                    p = Pregunta.objects.create(
-                        curso=curso_seleccionado, tipo='OM', enunciado=item.get('enunciado', 'Pregunta sin título'), 
-                        contenido={}, creado_por=request.user, anio=anio_seleccionado, seccion=seccion_default, es_ia=True 
-                    )
-                    for idx, opt_texto in enumerate(item.get('opciones', [])):
-                        Opcion.objects.create(pregunta=p, texto=opt_texto, es_correcta=(idx == item.get('correcta', 0)), orden=idx)
-                    preguntas_creadas += 1
+                    tipo = item.get('tipo', 'OM')
+                    nivel = item.get('nivel', 'FACIL')
+                    enunciado = item.get('enunciado', 'Pregunta sin título')
                     
-                return render(request, 'core/subir_material.html', {'form': SubirArchivoForm(), 'mensaje_exito': f"¡Éxito! Se generaron {preguntas_creadas} preguntas con IA."})
+                    contenido = {}
+                    if tipo == 'VF': contenido = {"correcta": item.get('correcta_bool', True)}
+                    elif tipo == 'COMP': contenido = {"palabra": item.get('palabra', '')}
+                    elif tipo == 'CORR': contenido = {"pares": item.get('pares', {})}
+                    
+                    p = Pregunta.objects.create(
+                        curso=curso_seleccionado, tipo=tipo, nivel=nivel, enunciado=enunciado, 
+                        contenido=contenido, creado_por=request.user, anio=anio_seleccionado, seccion=seccion_default, es_ia=True 
+                    )
+                    
+                    if tipo == 'OM':
+                        opciones = item.get('opciones', [])
+                        correcta_idx = item.get('correcta', 0)
+                        for idx, opt_texto in enumerate(opciones):
+                            Opcion.objects.create(pregunta=p, texto=opt_texto, es_correcta=(idx == correcta_idx), orden=idx)
+                            
+                    preguntas_creadas.append(p)
+                    
+                messages.success(request, f"¡Éxito! Se generaron {len(preguntas_creadas)} preguntas con IA.")
+                
+                # Redirigir a la hoja del examen para imprimir o responder
+                preguntas_renderizadas = [{'obj': p, 'acierto': True} for p in preguntas_creadas]
+                return render(request, 'core/examen_generado.html', {
+                    'preguntas_resueltas': preguntas_renderizadas, 'nota_final': 20, 
+                    'puntaje_obtenido': len(preguntas_creadas), 'total_preguntas': len(preguntas_creadas),
+                    'curso_obj': curso_seleccionado, 'anio_obj': anio_seleccionado
+                })
+                
             except Exception as e:
-                return render(request, 'core/subir_material.html', {'form': form, 'error': f"Error: {str(e)}"})
+                return render(request, 'core/subir_material.html', {'form': form, 'error': f"Error de la IA: {str(e)}"})
     else: form = SubirArchivoForm()
     return render(request, 'core/subir_material.html', {'form': form})
 
@@ -324,9 +381,7 @@ def procesar_banco_excel(request, nombre_archivo):
     try:
         wb = openpyxl.load_workbook(ruta_archivo, data_only=True)
         nombre_hoja_preguntas = next((s for s in wb.sheetnames if 'pregunta' in s.strip().lower()), wb.sheetnames[0])
-
         curso_id, anio_id, seccion_id = request.POST.get('curso'), request.POST.get('anio'), request.POST.get('seccion')
-
         if not curso_id or not anio_id or not seccion_id:
             messages.error(request, "Debes seleccionar Curso, Año y Sección en la tabla antes de procesar.")
             return redirect('bancos_preguntas')
@@ -334,17 +389,14 @@ def procesar_banco_excel(request, nombre_archivo):
         curso = Curso.objects.get(id=curso_id)
         anio = Anio.objects.get(id=anio_id)
         seccion = Seccion.objects.get(id=seccion_id)
-
         hoja_preguntas = wb[nombre_hoja_preguntas]
         filas_procesadas = 0
 
         for row in hoja_preguntas.iter_rows(min_row=2, values_only=True):
             if not row or len(row) < 5 or not row[1] or not row[4]: continue
-            
             tipo_excel = str(row[1]).strip().upper()
             nivel_excel = str(row[2]).strip().upper() if row[2] else 'FACIL'
             enunciado = str(row[4]).strip()
-            
             mapa_tipos = {'OPCION_MULTIPLE': 'OM', 'CORRELACION': 'CORR', 'VERDADERO_FALSO': 'VF', 'COMPLETAR': 'COMP', 'LIBRE': 'LIBRE'}
             tipo_django = mapa_tipos.get(tipo_excel, 'OM')
 
@@ -371,11 +423,9 @@ def procesar_banco_excel(request, nombre_archivo):
                 elif tipo_django == 'LIBRE':
                     pregunta.contenido = {"respuesta_modelo": str(row[11]).strip() if len(row) > 11 and row[11] else ''}; pregunta.save()
                 filas_procesadas += 1
-                
         messages.success(request, f"¡Éxito! Se cargaron {filas_procesadas} preguntas desde {nombre_archivo}.")
     except Exception as e:
         messages.error(request, f"Error inesperado al procesar el archivo: {str(e)}")
-        
     return redirect('bancos_preguntas')
 
 @login_required
@@ -457,11 +507,9 @@ def ver_reportes(request):
     query = request.GET.get('q', '')
     preguntas_list = Pregunta.objects.filter(enunciado__icontains=query).order_by('-fecha_creacion') if query else Pregunta.objects.all().order_by('-fecha_creacion')
     preguntas = Paginator(preguntas_list, 10).get_page(request.GET.get('page'))
-    
     tipos_data = {'labels': ['Opción Múltiple', 'Correlaciones', 'Verdadero/Falso', 'Completar'], 'values': [Pregunta.objects.filter(tipo='OM').count(), Pregunta.objects.filter(tipo__startswith='CORR').count(), Pregunta.objects.filter(tipo='VF').count(), Pregunta.objects.filter(tipo='COMP').count()]}
     notas_por_curso = ResultadoExamen.objects.values('curso__nombre').annotate(promedio=Avg('nota')).order_by('-promedio')[:5]
     notas_data = {'labels': [item['curso__nombre'] for item in notas_por_curso], 'values': [round(item['promedio'], 2) for item in notas_por_curso]}
-
     context = {
         'total': Pregunta.objects.count(), 'count_om': Pregunta.objects.filter(tipo='OM').count(), 
         'count_corr': Pregunta.objects.filter(tipo__startswith='CORR').count(), 'count_vf': Pregunta.objects.filter(tipo='VF').count(), 
@@ -533,10 +581,8 @@ def rendir_examen_asignado(request, examen_id):
     examen = get_object_or_404(ExamenAsignado, id=examen_id)
     preguntas_examen = list(examen.preguntas.all())
     random.shuffle(preguntas_examen)
-    
     distractores = ["Ninguna de las anteriores", "Opción incorrecta", "Concepto no relacionado", "Definición errónea"]
     preguntas_renderizadas = [{'obj': p, 'opciones_corr': random.sample(list(p.contenido.get('pares', {}).values()) + [random.choice(distractores)], min(5, len(p.contenido.get('pares', {})) + 1)) if p.tipo.startswith('CORR') else []} for p in preguntas_examen]
-
     return render(request, 'core/rendir_examen.html', {
         'preguntas': preguntas_renderizadas, 'curso_obj': examen.curso, 'anio_obj': examen.anio,
         'tiempo_minutos': examen.tiempo_minutos, 'examen_asignado_id': examen.id
@@ -559,7 +605,6 @@ def calificar_examen(request):
         pregunta_ids = request.POST.getlist('pregunta_ids')
         examen_asignado_id = request.POST.get('examen_asignado_id') 
         puntaje, resultados = 0, []
-        
         preguntas_libres_guardadas = []
         
         for p_id in pregunta_ids:
@@ -638,9 +683,7 @@ def guardar_revision_libres(request, resultado_id):
         resultado = get_object_or_404(ResultadoExamen, id=resultado_id)
         libres = resultado.respuestas_detalle.get('libres', [])
         total_preguntas = resultado.respuestas_detalle.get('total_preguntas', 20)
-        
-        puntaje_anterior_libres = 0
-        puntaje_nuevo_libres = 0
+        puntaje_anterior_libres, puntaje_nuevo_libres = 0, 0
         
         for i, libre in enumerate(libres):
             puntaje_anterior_libres += 1 
@@ -702,21 +745,3 @@ def exportar_notas_excel(request):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="Historial_de_Notas_CITEN.xlsx"'
     wb.save(response); return response
-from .forms import CambiarPasswordForm # Asegúrate de importarlo arriba
-
-@login_required
-def cambiar_password(request):
-    if request.method == 'POST':
-        form = CambiarPasswordForm(user=request.user, data=request.POST)
-        if form.is_valid():
-            user = form.save()
-            # Marcamos que ya cambió la contraseña
-            if hasattr(user, 'profile'):
-                user.profile.must_change_password = False
-                user.profile.save()
-            messages.success(request, "Tu contraseña ha sido actualizada correctamente.")
-            return redirect('home')
-    else:
-        form = CambiarPasswordForm(user=request.user)
-    
-    return render(request, 'core/cambiar_password.html', {'form': form})
