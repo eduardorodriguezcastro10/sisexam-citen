@@ -166,6 +166,25 @@ def cargar_usuarios_excel(request):
     return render(request, 'core/cargar_usuarios.html')
 
 # ==========================================
+# MÓDULO: CONTRASEÑAS
+# ==========================================
+@login_required
+def cambiar_password(request):
+    if request.method == 'POST':
+        form = CambiarPasswordForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            if hasattr(user, 'profile'):
+                user.profile.must_change_password = False
+                user.profile.save()
+            messages.success(request, "Tu contraseña ha sido actualizada correctamente.")
+            return redirect('home')
+    else:
+        form = CambiarPasswordForm(user=request.user)
+    
+    return render(request, 'core/cambiar_password.html', {'form': form})
+
+# ==========================================
 # MÓDULO: PROCESOS MANUALES E IA
 # ==========================================
 @login_required
@@ -224,11 +243,10 @@ def subir_material(request):
                 texto = extraer_texto(archivo)
                 if not texto.strip(): return render(request, 'core/subir_material.html', {'form': form, 'error': "El archivo no tiene texto legible."})
                 
-                texto_recortado = texto[:6000] # Aumentamos un poco el límite
+                texto_recortado = texto[:6000] 
                 api_key = os.getenv('GROQ_API_KEY')
                 if not api_key: return render(request, 'core/subir_material.html', {'form': form, 'error': "Falta configurar la API KEY en .env"})
                 
-                # Extraer variables del formulario
                 cantidad = form.cleaned_data['cantidad']
                 porc_facil = form.cleaned_data['porc_facil']
                 porc_intermedio = form.cleaned_data['porc_intermedio']
@@ -239,11 +257,10 @@ def subir_material(request):
                 if form.cleaned_data['incluir_vf']: tipos.append("VF")
                 if form.cleaned_data['incluir_comp']: tipos.append("COMP")
                 if form.cleaned_data['incluir_corr']: tipos.append("CORR")
-                if not tipos: tipos = ["OM"] # Por defecto
+                if not tipos: tipos = ["OM"]
                 
                 tipos_str = ", ".join(tipos)
                 
-                # Calcular cantidades exactas
                 cant_facil = round(cantidad * (porc_facil / 100))
                 cant_intermedio = round(cantidad * (porc_intermedio / 100))
                 cant_dificil = cantidad - cant_facil - cant_intermedio
@@ -321,7 +338,6 @@ def subir_material(request):
                     
                 messages.success(request, f"¡Éxito! Se generaron {len(preguntas_creadas)} preguntas con IA.")
                 
-                # Redirigir a la hoja del examen para imprimir o responder
                 preguntas_renderizadas = [{'obj': p, 'acierto': True} for p in preguntas_creadas]
                 return render(request, 'core/examen_generado.html', {
                     'preguntas_resueltas': preguntas_renderizadas, 'nota_final': 20, 
