@@ -1,11 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# --- NUEVO: PERFIL DE USUARIO ---
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    must_change_password = models.BooleanField(default=True) # Obliga a cambiarla la primera vez
-
+    must_change_password = models.BooleanField(default=True)
     def __str__(self): return f"Perfil de {self.user.username}"
 
 class AreaAcademica(models.Model):
@@ -69,7 +67,6 @@ class ExamenAsignado(models.Model):
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     activo = models.BooleanField(default=True)
-
     def __str__(self): return f"{self.titulo} - {self.curso.nombre}"
 
 class ResultadoExamen(models.Model):
@@ -81,5 +78,4 @@ class ResultadoExamen(models.Model):
     nota = models.FloatField(help_text="Nota vigesimal (0-20)")
     fecha_rendido = models.DateTimeField(auto_now_add=True)
     respuestas_detalle = models.JSONField(default=dict, blank=True)
-
     def __str__(self): return f"{self.alumno.username} - {self.curso.nombre} - Nota: {self.nota}"

@@ -1,3 +1,6 @@
+"""
+Django settings for citen_system project.
+"""
 from pathlib import Path
 import os
 import dj_database_url 
@@ -13,15 +16,19 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',
     'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.staticfiles',
-    'core.apps.CoreConfig', # Usar CoreConfig para que carguen las señales
+    'core.apps.CoreConfig', 
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware', 'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middleware.ForcePasswordChangeMiddleware', # <-- NUEVO MIDDLEWARE
+    'django.middleware.security.SecurityMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware', 
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware', 
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware', 
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.ForcePasswordChangeMiddleware',
 ]
 
 ROOT_URLCONF = 'citen_system.urls'
@@ -75,14 +82,5 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- CONFIGURACIÓN DE CORREO (PARA RECUPERAR CONTRASEÑA) ---
-# IMPORTANTE: Pon aquí tu correo de Gmail y tu "Contraseña de Aplicación"
-#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-#EMAIL_HOST = 'smtp.gmail.com'
-#EMAIL_PORT = 587
-#EMAIL_USE_TLS = True
-#EMAIL_HOST_USER = 'tucorreo@gmail.com'  # <-- CAMBIA ESTO
-#EMAIL_HOST_PASSWORD = 'xxxx xxxx xxxx xxxx' # <-- CAMBIA ESTO (Clave de aplicación de Gmail)
-#DEFAULT_FROM_EMAIL = 'SISEXAM CITEN <tucorreo@gmail.com>'
-# --- CONFIGURACIÓN DE CORREO LOCAL (PARA PRUEBAS) ---
+# Configuración de correo local
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

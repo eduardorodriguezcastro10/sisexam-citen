@@ -34,6 +34,8 @@ urlpatterns = [
     path('reportes/historial-notas/', views.ver_historial_notas, name='ver_historial_notas'),
     path('reportes/eliminar/<int:pregunta_id>/', views.eliminar_pregunta, name='eliminar_pregunta'),
     path('reportes/editar/<int:pregunta_id>/', views.editar_pregunta, name='editar_pregunta'),
+    
+    # Revisión de Libres
     path('reportes/revisar-libres/<int:resultado_id>/', views.revisar_libres, name='revisar_libres'),
     path('reportes/guardar-libres/<int:resultado_id>/', views.guardar_revision_libres, name='guardar_revision_libres'),
     
@@ -48,14 +50,12 @@ urlpatterns = [
     path('examen-asignado/<int:examen_id>/', views.rendir_examen_asignado, name='rendir_examen_asignado'),
     path('calificar-examen/', views.calificar_examen, name='calificar_examen'),
     
-    # Autenticación y Contraseñas
+    # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     
-    # Cambiar Contraseña (dentro del sistema)
+    # Contraseñas
     path('cambiar-password/', views.cambiar_password, name='cambiar_password'),
-    
-    # Recuperar Contraseña (por correo)
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='core/password_reset_form.html', email_template_name='core/password_reset_email.html', subject_template_name='core/password_reset_subject.txt', success_url='/password-reset/done/'), name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='core/password_reset_done.html'), name='password_reset_done'),
     path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='core/password_reset_confirm.html', success_url='/login/'), name='password_reset_confirm'),

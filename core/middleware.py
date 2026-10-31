@@ -7,15 +7,13 @@ class ForcePasswordChangeMiddleware:
 
     def __call__(self, request):
         if request.user.is_authenticated:
-            # Si el usuario tiene que cambiar la contraseña y no está en las vistas permitidas
             if hasattr(request.user, 'profile') and request.user.profile.must_change_password:
                 allowed_paths = [
                     reverse('cambiar_password'), 
                     reverse('logout'),
-                    '/admin/' # Dejamos pasar al admin por si acaso
+                    '/admin/' 
                 ]
                 if request.path not in allowed_paths:
                     return redirect('cambiar_password')
-
         response = self.get_response(request)
         return response

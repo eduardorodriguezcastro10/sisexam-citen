@@ -1,5 +1,5 @@
 from django import forms
-from .models import Pregunta, Curso, Anio
+from .models import Pregunta, Curso, Anio, Seccion, Especialidad
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 
@@ -16,10 +16,14 @@ class PreguntaForm(forms.ModelForm):
         }
 
 class SubirArchivoForm(forms.Form):
-    curso = forms.ModelChoiceField(queryset=Curso.objects.all(), label="Curso", widget=forms.Select(attrs={'class': 'form-control'}))
+    especialidad = forms.ModelChoiceField(queryset=Especialidad.objects.all(), label="Especialidad", widget=forms.Select(attrs={'class': 'form-control'}))
+    curso = forms.ModelChoiceField(queryset=Curso.objects.all(), required=False, label="Curso Existente", widget=forms.Select(attrs={'class': 'form-control'}))
+    nuevo_curso = forms.CharField(required=False, label="O Crear Nuevo Curso (Escriba el nombre)", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Programación Avanzada'}))
     anio = forms.ModelChoiceField(queryset=Anio.objects.all(), label="Año", widget=forms.Select(attrs={'class': 'form-control'}))
-    archivo = forms.FileField(label="Archivo (PDF, DOCX, PPTX)", widget=forms.FileInput(attrs={'class': 'form-control'}))
+    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all(), label="Sección", widget=forms.Select(attrs={'class': 'form-control'}))
+    nombre_examen = forms.CharField(required=False, label="Título del Examen", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Examen Parcial 1'}))
     
+    archivo = forms.FileField(label="Archivo (PDF, DOCX, PPTX)", widget=forms.FileInput(attrs={'class': 'form-control'}))
     cantidad = forms.IntegerField(min_value=1, max_value=30, initial=10, label="Cantidad de Preguntas", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 20'}))
     porc_facil = forms.IntegerField(min_value=0, max_value=100, initial=40, label="Fácil (%)", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '40'}))
     porc_intermedio = forms.IntegerField(min_value=0, max_value=100, initial=40, label="Intermedio (%)", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '40'}))
