@@ -8,10 +8,10 @@ class PreguntaForm(forms.ModelForm):
         model = Pregunta
         fields = ['curso', 'anio', 'seccion', 'tipo', 'enunciado']
         widgets = {
-            'curso': forms.Select(attrs={'class': 'form-select'}),
-            'anio': forms.Select(attrs={'class': 'form-select'}),
-            'seccion': forms.Select(attrs={'class': 'form-select'}),
-            'tipo': forms.Select(attrs={'class': 'form-select', 'id': 'select-tipo'}),
+            'curso': forms.Select(attrs={'class': 'form-control'}),
+            'anio': forms.Select(attrs={'class': 'form-control'}),
+            'seccion': forms.Select(attrs={'class': 'form-control'}),
+            'tipo': forms.Select(attrs={'class': 'form-control', 'id': 'select-tipo'}),
             'enunciado': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Escriba aquí el enunciado completo de la pregunta...'}),
         }
 
@@ -20,11 +20,10 @@ class SubirArchivoForm(forms.Form):
     anio = forms.ModelChoiceField(queryset=Anio.objects.all(), label="Año", widget=forms.Select(attrs={'class': 'form-control'}))
     archivo = forms.FileField(label="Archivo (PDF, DOCX, PPTX)", widget=forms.FileInput(attrs={'class': 'form-control'}))
     
-    # NUEVOS CAMPOS DE CONFIGURACIÓN DEL EXAMEN IA
-    cantidad = forms.IntegerField(min_value=1, max_value=30, initial=10, label="Cantidad de Preguntas", widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    porc_facil = forms.IntegerField(min_value=0, max_value=100, initial=40, label="% Fáciles", widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    porc_intermedio = forms.IntegerField(min_value=0, max_value=100, initial=40, label="% Intermedias", widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    porc_dificil = forms.IntegerField(min_value=0, max_value=100, initial=20, label="% Difíciles", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    cantidad = forms.IntegerField(min_value=1, max_value=30, initial=10, label="Cantidad de Preguntas", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 20'}))
+    porc_facil = forms.IntegerField(min_value=0, max_value=100, initial=40, label="Fácil (%)", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '40'}))
+    porc_intermedio = forms.IntegerField(min_value=0, max_value=100, initial=40, label="Intermedio (%)", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '40'}))
+    porc_dificil = forms.IntegerField(min_value=0, max_value=100, initial=20, label="Difícil (%)", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '20'}))
     
     incluir_om = forms.BooleanField(required=False, initial=True, label="Opción Múltiple", widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
     incluir_vf = forms.BooleanField(required=False, initial=True, label="Verdadero/Falso", widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))

@@ -139,8 +139,7 @@ def cargar_usuarios_excel(request):
             wb = openpyxl.load_workbook(archivo, data_only=True)
             hoja = wb.active
             grupo_alumnos, _ = Group.objects.get_or_create(name='Alumnos')
-            creados = 0
-            errores = 0
+            creados, errores = 0, 0
             for row in hoja.iter_rows(min_row=2, values_only=True):
                 if not row or not row[0]: continue
                 username = str(row[0]).strip() if row[0] else ''
