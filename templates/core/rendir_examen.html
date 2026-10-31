@@ -1,16 +1,7 @@
 {% extends 'core/base.html' %}
-{% load static %}
 
 {% block contenido %}
 <style>
-    /* Estilo para evitar selección de texto */
-    .examen-protegido {
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
-
     .examen-hoja { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; position: relative; border-top: 6px solid #0B2545; }
     .examen-header { text-align: center; border-bottom: 2px solid #0B2545; padding-bottom: 20px; margin-bottom: 30px; }
     .pregunta-bloque { margin-bottom: 30px; border-bottom: 1px dashed #eee; padding-bottom: 20px; }
@@ -34,24 +25,34 @@
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 </style>
 
-{% if user.is_superuser or user.groups.all.0.name == 'Docentes' %}
-    <!-- SOLO PARA DOCENTES: Botón para imprimir el examen en blanco -->
-    <div class="no-print" style="text-align: right; max-width: 900px; margin: 0 auto 20px auto;">
+<!-- BANNER SOLO PARA EL DOCENTE CUANDO GENERA CON IA -->
+{% if es_vista_previa_ia %}
+<div class="no-print" style="max-width: 900px; margin: 0 auto 20px auto; background: #fff3e0; border-left: 5px solid #E6A817; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <div>
+        <h3 style="margin: 0; color: #0B2545;"><i class="fa-solid fa-wand-magic-sparkles"></i> Examen Generado por IA</h3>
+        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Este es el examen en blanco. Puedes imprimirlo para tus alumnos o ver la versión resuelta.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'examen_resuelto_ia' %}?ids={{ preguntas_ia_ids }}" class="btn-dorado" style="padding: 10px 20px; background: #1565c0; color: white; text-decoration: none;">
+            <i class="fa-solid fa-eye"></i> Ver Resuelto
+        </a>
         <button onclick="window.print()" class="btn-dorado" style="padding: 10px 20px; background: #0B2545; color: white;">
-            <i class="fa-solid fa-print"></i> Imprimir Examen en Blanco (Físico)
+            <i class="fa-solid fa-print"></i> Imprimir en Blanco
         </button>
     </div>
-{% else %}
-    <!-- SOLO PARA ALUMNOS: Temporizador -->
+</div>
+{% endif %}
+
+{% if not es_vista_previa_ia and not user.is_superuser and user.groups.all.0.name != 'Docentes' %}
+    <!-- TEMPORIZADOR SOLO PARA ALUMNOS -->
     <div class="timer-floating no-print" id="timer">
         <i class="fa-solid fa-clock"></i> <span id="time-display">00:00</span>
     </div>
 {% endif %}
 
-<!-- CONTENEDOR PROTEGIDO CONTRA COPIA -->
-<div class="examen-hoja {% if not user.is_superuser and user.groups.all.0.name != 'Docentes' %}examen-protegido{% endif %}">
+<div class="examen-hoja">
     <div class="examen-header">
-        <h2 style="color: #0B2545; margin: 0;">EXAMEN</h2>
+        <h2 style="color: #0B2545; margin: 0;">EXAMEN FINAL</h2>
         <p style="color: #0B2545; font-size: 18px; margin-top: 10px; font-weight: bold;">{{ curso_obj.nombre }}</p>
         <p style="color: #666; font-size: 14px;">{{ anio_obj }} | Alumno: {{ user.username }}</p>
     </div>
@@ -103,12 +104,9 @@
     </form>
 </div>
 
-{% if not user.is_superuser and user.groups.all.0.name != 'Docentes' %}
+{% if not es_vista_previa_ia and not user.is_superuser and user.groups.all.0.name != 'Docentes' %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        /* =========================================
-           1. LÓGICA DEL TEMPORIZADOR
-           ========================================= */
         let tiempoMinutos = parseInt("{{ tiempo_minutos|default:30 }}");
         let tiempoTotalSegundos = tiempoMinutos * 60;
         const display = document.getElementById("time-display");
@@ -133,60 +131,6 @@
         }
         actualizarReloj();
         const intervalo = setInterval(actualizarReloj, 1000);
-
-        /* =========================================
-           2. MODO ANTI-COPIA (SISTEMA DE SEGURIDAD)
-           ========================================= */
-        
-        // A. Bloquear Clic Derecho
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // B. Bloquear atajos de teclado (Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+U)
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'u')) {
-                e.preventDefault();
-                Swal.fire({
-                    toast: true, position: 'top-end', icon: 'warning',
-                    title: 'Acción no permitida durante el examen', showConfirmButton: false, timer: 2000
-                });
-            }
-            // Bloquear F12 (Herramientas de desarrollador)
-            if (e.key === 'F12') {
-                e.preventDefault();
-            }
-        });
-
-        // C. Detectar si el alumno cambia de pestaña o minimiza la ventana
-        let advertencias = 0;
-        let examenEnviado = false;
-
-        document.addEventListener("visibilitychange", function() {
-            if (document.hidden && !examenEnviado) {
-                advertencias++;
-                
-                if (advertencias >= 3) {
-                    examenEnviado = true;
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Examen Cancelado',
-                        text: 'Has salido de la pestaña del examen 3 veces. El examen se enviará automáticamente.',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        timer: 3000
-                    }).then(() => {
-                        form.submit();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: `¡Advertencia ${advertencias} de 3!`,
-                        text: 'Has salido de la pestaña del examen. Si vuelves a hacerlo, el examen se enviará automáticamente.',
-                        confirmButtonColor: '#c62828',
-                        confirmButtonText: 'Entendido, volver al examen'
-                    });
-                }
-            }
-        });
     });
 </script>
 {% endif %}

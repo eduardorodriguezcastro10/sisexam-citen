@@ -2,87 +2,31 @@
 
 {% block contenido %}
 <style>
-    /* Contenedor Principal */
-    .upload-wrapper { 
-        max-width: 1000px; 
-        margin: 40px auto; 
-        background: white; 
-        border-radius: 12px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-        overflow: hidden; 
-        border-top: 6px solid #0B2545; 
-    }
+    .upload-wrapper { max-width: 1000px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border-top: 6px solid #0B2545; }
     .upload-header { background: #f8fafc; padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
     .upload-header h2 { margin: 0; font-size: 26px; color: #0B2545; font-weight: bold; }
     .upload-header p { margin: 10px 0 0 0; color: #666; font-size: 15px; }
     
     .upload-body { padding: 40px; }
     
-    /* Formulario en columna para evitar superposiciones */
     .ia-form { display: flex; flex-direction: column; gap: 30px; }
     
-    /* Cuadrícula de 2 columnas */
-    .grid-layout { 
-        display: grid; 
-        grid-template-columns: 1fr 1fr; 
-        gap: 40px; 
-        align-items: start; /* Evita que las columnas se estiren de más */
-    }
+    .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
     
     .form-group { margin-bottom: 20px; }
     .form-group label { display: block; font-weight: bold; color: #0B2545; margin-bottom: 8px; font-size: 14px; }
     
-    /* Inputs generales */
-    .form-control, .form-select { 
-        width: 100%; 
-        padding: 12px; 
-        border: 1px solid #ccc; 
-        border-radius: 6px; 
-        font-family: inherit; 
-        font-size: 14px; 
-        box-sizing: border-box; 
-        transition: 0.2s; 
-    }
+    .form-control, .form-select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; font-size: 14px; box-sizing: border-box; transition: 0.2s; }
     .form-control:focus, .form-select:focus { border-color: #0B2545; outline: none; box-shadow: 0 0 5px rgba(11, 37, 69, 0.2); }
 
-    /* Zona de subida de archivo (Optimizada para móviles) */
-    .drop-zone { 
-        border: 3px dashed #b0b0b0; 
-        border-radius: 10px; 
-        padding: 30px 20px; 
-        text-align: center; 
-        background: #f9f9f9; 
-        cursor: pointer; 
-        transition: 0.3s; 
-        position: relative; 
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 150px;
-        margin-top: 10px;
-    }
+    .drop-zone { border: 3px dashed #b0b0b0; border-radius: 10px; padding: 30px 20px; text-align: center; background: #f9f9f9; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px; margin-top: 10px; }
     .drop-zone:hover { background: #f0f4f8; border-color: #0B2545; }
-    
-    /* Input invisible que ocupa todo el recuadro */
-    .drop-zone input[type="file"] { 
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0; 
-        cursor: pointer;
-        z-index: 10;
-    }
-    
+    .drop-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
     .drop-zone .content { pointer-events: none; }
     .drop-zone i { font-size: 40px; color: #0B2545; margin-bottom: 10px; display: block; }
     .drop-zone .text-main { font-size: 16px; font-weight: bold; color: #0B2545; }
     .drop-zone .text-sub { font-size: 13px; color: #666; margin-top: 5px; }
 
-    /* Panel de configuración */
     .config-box { background: #f8fafc; padding: 25px; border-radius: 10px; border: 1px solid #e0e0e0; }
     .config-box h4 { margin-top: 0; margin-bottom: 20px; color: #0B2545; font-size: 18px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
     
@@ -92,33 +36,10 @@
     .check-item { display: flex; align-items: center; gap: 10px; background: white; padding: 10px 15px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-size: 14px; }
     .check-item input { width: 18px; height: 18px; accent-color: #E6A817; cursor: pointer; margin: 0; }
 
-    /* Botón de Enviar */
-    .btn-upload { 
-        display: flex; 
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        width: 100%; 
-        background: #0B2545; 
-        color: #E6A817; 
-        font-size: 18px; 
-        font-weight: bold; 
-        padding: 18px; 
-        border: none; 
-        border-radius: 8px; 
-        cursor: pointer; 
-        transition: 0.3s; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-        position: relative;
-        z-index: 10;
-    }
+    .btn-upload { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; background: #0B2545; color: #E6A817; font-size: 18px; font-weight: bold; padding: 18px; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; z-index: 10; }
     .btn-upload:hover { background: #E6A817; color: #0B2545; transform: translateY(-2px); }
     
-    /* Diseño Responsivo para Celulares */
-    @media (max-width: 800px) { 
-        .grid-layout { grid-template-columns: 1fr; gap: 20px; } 
-        .config-grid-3 { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 800px) { .grid-layout { grid-template-columns: 1fr; gap: 20px; } .config-grid-3 { grid-template-columns: 1fr; } }
 </style>
 
 <div class="upload-wrapper">
@@ -135,7 +56,6 @@
             <div style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c62828; font-weight: bold;"><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</div>
         {% endif %}
 
-        <!-- FORMULARIO FLEX COLUMNA (Evita que el botón se superponga) -->
         <form method="POST" enctype="multipart/form-data" id="ia-form" class="ia-form">
             {% csrf_token %}
             
@@ -149,9 +69,8 @@
                     <div class="form-group"><label>{{ form.seccion.label }}:</label>{{ form.seccion }}</div>
                     <div class="form-group"><label>{{ form.nombre_examen.label }}:</label>{{ form.nombre_examen }}</div>
                     
-                    <!-- ZONA DE SUBIDA DE ARCHIVO -->
                     <div class="drop-zone">
-                        {{ form.archivo }} <!-- El input invisible -->
+                        {{ form.archivo }}
                         <div class="content">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
                             <div class="text-main" id="text-main">Haz clic para subir tu archivo</div>
@@ -169,9 +88,18 @@
 
                     <label style="font-weight: bold; color: #0B2545; font-size: 14px; display: block; margin-bottom: 8px;">Dificultad (%):</label>
                     <div class="config-grid-3">
-                        <div>{{ form.porc_facil }}</div>
-                        <div>{{ form.porc_intermedio }}</div>
-                        <div>{{ form.porc_dificil }}</div>
+                        <div>
+                            <span style="font-size: 12px; font-weight: bold; color: #666;">Fácil</span>
+                            {{ form.porc_facil }}
+                        </div>
+                        <div>
+                            <span style="font-size: 12px; font-weight: bold; color: #666;">Intermedio</span>
+                            {{ form.porc_intermedio }}
+                        </div>
+                        <div>
+                            <span style="font-size: 12px; font-weight: bold; color: #666;">Difícil</span>
+                            {{ form.porc_dificil }}
+                        </div>
                     </div>
 
                     <label style="font-weight: bold; color: #0B2545; font-size: 14px; display: block; margin-bottom: 8px;">Tipos de Pregunta:</label>
@@ -184,7 +112,6 @@
                 </div>
             </div>
 
-            <!-- BOTÓN SEPARADO DE LA CUADRÍCULA -->
             <button type="submit" class="btn-upload" id="btn-procesar">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Examen Ahora
             </button>
@@ -193,7 +120,6 @@
 </div>
 
 <script>
-    // Cambiar el texto y color cuando se selecciona el archivo
     document.getElementById('id_archivo').addEventListener('change', function(e) {
         const fileName = e.target.files[0]?.name || "";
         if(fileName) {
@@ -205,7 +131,6 @@
         }
     });
 
-    // Mostrar spinner al enviar
     document.getElementById('ia-form').addEventListener('submit', function() {
         const btn = document.getElementById('btn-procesar');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está redactando el examen... (Espera)';

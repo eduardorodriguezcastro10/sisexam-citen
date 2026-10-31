@@ -55,6 +55,9 @@ def home(request):
         'total_resultados': total_resultados, 'promedio_general': round(promedio_general, 1), 'ultimas_notas': ultimas_notas, 'tipos_data': tipos_data
     })
 
+# ==========================================
+# MÓDULO: GESTIÓN DE USUARIOS
+# ==========================================
 @login_required
 @docente_required
 def gestionar_usuarios(request):
@@ -86,11 +89,13 @@ def crear_usuario(request):
 def editar_usuario(request, usuario_id):
     if not request.user.is_superuser: return redirect('home')
     usuario = get_object_or_404(User, id=usuario_id)
+    
     if request.method == 'POST':
         form = EditarUsuarioForm(request.POST, instance=usuario)
         if form.is_valid():
             user_edit = form.save(commit=False)
             user_edit.is_active = form.cleaned_data['activo']
+            
             nuevo_rol = form.cleaned_data['rol']
             if nuevo_rol == 'Administrador':
                 user_edit.is_superuser = True
@@ -101,6 +106,7 @@ def editar_usuario(request, usuario_id):
                 user_edit.groups.clear()
                 grupo, _ = Group.objects.get_or_create(name=nuevo_rol)
                 user_edit.groups.add(grupo)
+                
             user_edit.save()
             messages.success(request, f"Usuario {usuario.username} actualizado correctamente.")
             return redirect('gestionar_usuarios')
@@ -158,6 +164,9 @@ def cargar_usuarios_excel(request):
             return render(request, 'core/cargar_usuarios.html')
     return render(request, 'core/cargar_usuarios.html')
 
+# ==========================================
+# MÓDULO: CONTRASEÑAS
+# ==========================================
 @login_required
 def cambiar_password(request):
     if request.method == 'POST':
@@ -171,8 +180,12 @@ def cambiar_password(request):
             return redirect('home')
     else:
         form = CambiarPasswordForm(user=request.user)
+    
     return render(request, 'core/cambiar_password.html', {'form': form})
 
+# ==========================================
+# MÓDULO: PROCESOS MANUALES E IA
+# ==========================================
 @login_required
 @docente_required
 def registrar_pregunta(request):
@@ -188,6 +201,7 @@ def registrar_pregunta(request):
             elif tipo == 'VF': pregunta.contenido = {"correcta": request.POST.get('vf_respuesta') == 'true'}
             elif tipo == 'COMP': pregunta.contenido = {"palabra": request.POST.get('comp_palabra', '')}
             elif tipo == 'LIBRE': pregunta.contenido = {"respuesta_modelo": request.POST.get('libre_respuesta', '')}
+                
             pregunta.save()
             if tipo == 'OM':
                 opciones = [request.POST.get('om_a', ''), request.POST.get('om_b', ''), request.POST.get('om_c', ''), request.POST.get('om_d', '')]
@@ -307,11 +321,23 @@ def subir_material(request):
                     
                 messages.success(request, f"¡Éxito! Se generaron {len(preguntas_creadas)} preguntas con IA.")
                 
-                preguntas_renderizadas = [{'obj': p, 'acierto': True} for p in preguntas_creadas]
-                return render(request, 'core/examen_generado.html', {
-                    'preguntas_resueltas': preguntas_renderizadas, 'nota_final': 20, 
-                    'puntaje_obtenido': len(preguntas_creadas), 'total_preguntas': len(preguntas_creadas),
-                    'curso_obj': curso_final, 'anio_obj': anio_seleccionado, 'titulo_examen': nombre_examen
+                distractores = ["Ninguna de las anteriores", "Opción incorrecta", "Concepto no relacionado", "Definición errónea"]
+                preguntas_renderizadas = []
+                for p in preguntas_creadas:
+                    opciones_corr = []
+                    if p.tipo.startswith('CORR'):
+                        opciones_corr = list(p.contenido.get('pares', {}).values())
+                        opciones_corr.append(random.choice(distractores))
+                        random.shuffle(opciones_corr)
+                    preguntas_renderizadas.append({'obj': p, 'opciones_corr': opciones_corr})
+
+                return render(request, 'core/rendir_examen.html', {
+                    'preguntas': preguntas_renderizadas, 
+                    'curso_obj': curso_final, 
+                    'anio_obj': anio_seleccionado, 
+                    'tiempo_minutos': 30,
+                    'es_vista_previa_ia': True,
+                    'preguntas_ia_ids': ",".join(str(p.id) for p in preguntas_creadas)
                 })
                 
             except Exception as e:
@@ -321,13 +347,49 @@ def subir_material(request):
 
 @login_required
 @docente_required
+def examen_resuelto_ia(request):
+    ids_str = request.GET.get('ids', '')
+    if not ids_str: return redirect('home')
+    ids = [int(i) for i in ids_str.split(',') if i.isdigit()]
+    preguntas_examen = list(Pregunta.objects.filter(id__in=ids))
+    
+    if not preguntas_examen:
+        return redirect('home')
+
+    distractores = ["Ninguna de las anteriores", "Opción incorrecta", "Concepto no relacionado", "Definición errónea"]
+    preguntas_renderizadas = [{'obj': p, 'opciones_corr': random.sample(list(p.contenido.get('pares', {}).values()) + [random.choice(distractores)], min(5, len(p.contenido.get('pares', {})) + 1)) if p.tipo.startswith('CORR') else []} for p in preguntas_examen]
+
+    return render(request, 'core/examen_generado.html', {
+        'preguntas_resueltas': [{'obj': p, 'acierto': True} for p in preguntas_renderizadas],
+        'nota_final': 20, 
+        'puntaje_obtenido': len(preguntas_renderizadas), 
+        'total_preguntas': len(preguntas_renderizadas),
+        'curso_obj': preguntas_examen[0].curso,
+        'anio_obj': preguntas_examen[0].anio,
+        'titulo_examen': "Examen Generado por IA (Resuelto)"
+    })
+
+# ==========================================
+# MÓDULO: BANCOS DE PREGUNTAS (EXCEL)
+# ==========================================
+@login_required
+@docente_required
 def bancos_preguntas(request):
     carpeta_bancos = os.path.join(settings.MEDIA_ROOT, 'bancos_preguntas')
     if not os.path.exists(carpeta_bancos): os.makedirs(carpeta_bancos)
     archivos = [f for f in os.listdir(carpeta_bancos) if f.endswith(('.xlsx', '.xls'))]
-    stats = {'facil': Pregunta.objects.filter(nivel='FACIL').count(), 'intermedio': Pregunta.objects.filter(nivel='INTERMEDIO').count(), 'dificil': Pregunta.objects.filter(nivel='DIFICIL').count()}
+    stats = {
+        'facil': Pregunta.objects.filter(nivel='FACIL').count(),
+        'intermedio': Pregunta.objects.filter(nivel='INTERMEDIO').count(),
+        'dificil': Pregunta.objects.filter(nivel='DIFICIL').count(),
+    }
     examenes_creados = ExamenAsignado.objects.all().order_by('-fecha_creacion')
-    context = {'archivos': archivos, 'stats': stats, 'cursos': Curso.objects.all().order_by('nombre'), 'anios': Anio.objects.all().order_by('numero'), 'secciones': Seccion.objects.all().order_by('letra'), 'examenes_creados': examenes_creados}
+    
+    context = {
+        'archivos': archivos, 'stats': stats, 'cursos': Curso.objects.all().order_by('nombre'),
+        'anios': Anio.objects.all().order_by('numero'), 'secciones': Seccion.objects.all().order_by('letra'),
+        'examenes_creados': examenes_creados
+    }
     return render(request, 'core/bancos_preguntas.html', context)
 
 @login_required
@@ -350,39 +412,55 @@ def procesar_banco_excel(request, nombre_archivo):
     if not os.path.exists(ruta_archivo):
         messages.error(request, "El archivo no existe.")
         return redirect('bancos_preguntas')
+    
     try:
         wb = openpyxl.load_workbook(ruta_archivo, data_only=True)
         nombre_hoja_preguntas = next((s for s in wb.sheetnames if 'pregunta' in s.strip().lower()), wb.sheetnames[0])
         curso_id, anio_id, seccion_id = request.POST.get('curso'), request.POST.get('anio'), request.POST.get('seccion')
         if not curso_id or not anio_id or not seccion_id:
-            messages.error(request, "Debes seleccionar Curso, Año y Sección.")
+            messages.error(request, "Debes seleccionar Curso, Año y Sección en la tabla antes de procesar.")
             return redirect('bancos_preguntas')
-        curso, anio, seccion = Curso.objects.get(id=curso_id), Anio.objects.get(id=anio_id), Seccion.objects.get(id=seccion_id)
+
+        curso = Curso.objects.get(id=curso_id)
+        anio = Anio.objects.get(id=anio_id)
+        seccion = Seccion.objects.get(id=seccion_id)
         hoja_preguntas = wb[nombre_hoja_preguntas]
         filas_procesadas = 0
+
         for row in hoja_preguntas.iter_rows(min_row=2, values_only=True):
             if not row or len(row) < 5 or not row[1] or not row[4]: continue
-            tipo_excel, nivel_excel, enunciado = str(row[1]).strip().upper(), str(row[2]).strip().upper() if row[2] else 'FACIL', str(row[4]).strip()
+            tipo_excel = str(row[1]).strip().upper()
+            nivel_excel = str(row[2]).strip().upper() if row[2] else 'FACIL'
+            enunciado = str(row[4]).strip()
             mapa_tipos = {'OPCION_MULTIPLE': 'OM', 'CORRELACION': 'CORR', 'VERDADERO_FALSO': 'VF', 'COMPLETAR': 'COMP', 'LIBRE': 'LIBRE'}
             tipo_django = mapa_tipos.get(tipo_excel, 'OM')
+
             if not Pregunta.objects.filter(enunciado=enunciado, curso=curso).exists():
-                pregunta = Pregunta.objects.create(curso=curso, tipo=tipo_django, nivel=nivel_excel, enunciado=enunciado, contenido={}, creado_por=request.user, anio=anio, seccion=seccion, origen_banco=nombre_archivo)
+                pregunta = Pregunta.objects.create(
+                    curso=curso, tipo=tipo_django, nivel=nivel_excel, enunciado=enunciado, 
+                    contenido={}, creado_por=request.user, anio=anio, seccion=seccion, origen_banco=nombre_archivo
+                )
                 if tipo_django == 'OM':
+                    opciones_textos = row[6:11]
                     correcta_letra = str(row[11]).strip().upper() if len(row) > 11 and row[11] else 'A'
-                    for idx, txt in enumerate(row[6:11]):
+                    for idx, txt in enumerate(opciones_textos):
                         if txt: Opcion.objects.create(pregunta=pregunta, texto=str(txt), es_correcta=(['A','B','C','D','E'][idx] == correcta_letra), orden=idx)
-                elif tipo_django == 'VF': pregunta.contenido = {"correcta": str(row[11]).strip().upper() == 'V' if len(row) > 11 and row[11] else True}; pregunta.save()
+                elif tipo_django == 'VF':
+                    pregunta.contenido = {"correcta": str(row[11]).strip().upper() == 'V' if len(row) > 11 and row[11] else True}; pregunta.save()
                 elif tipo_django == 'CORR':
                     pares = {}
                     for i in range(5):
                         idx_a, idx_b = 12+(i*2), 13+(i*2)
                         if len(row) > idx_b and row[idx_a] and row[idx_b]: pares[str(row[idx_a])] = str(row[idx_b])
                     pregunta.contenido = {"pares": pares}; pregunta.save()
-                elif tipo_django == 'COMP': pregunta.contenido = {"palabra": str(row[11]).strip() if len(row) > 11 and row[11] else ''}; pregunta.save()
-                elif tipo_django == 'LIBRE': pregunta.contenido = {"respuesta_modelo": str(row[11]).strip() if len(row) > 11 and row[11] else ''}; pregunta.save()
+                elif tipo_django == 'COMP':
+                    pregunta.contenido = {"palabra": str(row[11]).strip() if len(row) > 11 and row[11] else ''}; pregunta.save()
+                elif tipo_django == 'LIBRE':
+                    pregunta.contenido = {"respuesta_modelo": str(row[11]).strip() if len(row) > 11 and row[11] else ''}; pregunta.save()
                 filas_procesadas += 1
-        messages.success(request, f"¡Éxito! Se cargaron {filas_procesadas} preguntas.")
-    except Exception as e: messages.error(request, f"Error: {str(e)}")
+        messages.success(request, f"¡Éxito! Se cargaron {filas_procesadas} preguntas desde {nombre_archivo}.")
+    except Exception as e:
+        messages.error(request, f"Error inesperado al procesar el archivo: {str(e)}")
     return redirect('bancos_preguntas')
 
 @login_required
@@ -391,14 +469,16 @@ def eliminar_banco_excel(request, nombre_archivo):
     ruta_archivo = os.path.join(settings.MEDIA_ROOT, 'bancos_preguntas', nombre_archivo)
     if os.path.exists(ruta_archivo): os.remove(ruta_archivo)
     Pregunta.objects.filter(origen_banco=nombre_archivo).delete()
-    messages.success(request, f"Archivo '{nombre_archivo}' eliminado.")
+    messages.success(request, f"Archivo '{nombre_archivo}' eliminado. También se borraron las preguntas.")
     return redirect('bancos_preguntas')
 
 @login_required
 @docente_required
 def ver_preguntas_banco(request, nombre_archivo):
     preguntas = Pregunta.objects.filter(origen_banco=nombre_archivo).order_by('id')
-    page_obj = Paginator(preguntas, 15).get_page(request.GET.get('page'))
+    paginator = Paginator(preguntas, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, 'core/ver_preguntas_banco.html', {'nombre_archivo': nombre_archivo, 'preguntas': page_obj})
 
 @login_required
@@ -408,28 +488,39 @@ def generar_examen_porcentajes(request):
         curso_id, anio_id = request.POST.get('curso'), request.POST.get('anio')
         total_preguntas = int(request.POST.get('total_preguntas', 20))
         porc_facil, porc_intermedio = int(request.POST.get('porc_facil', 70)), int(request.POST.get('porc_intermedio', 20))
-        banco_filtro, tiempo_minutos = request.POST.get('banco_filtro', ''), int(request.POST.get('tiempo_minutos', 30))
+        banco_filtro = request.POST.get('banco_filtro', '')
+        tiempo_minutos = int(request.POST.get('tiempo_minutos', 30))
         guardar_examen = request.POST.get('guardar_examen') == 'on'
-        cant_facil, cant_intermedio = round(total_preguntas * (porc_facil / 100)), round(total_preguntas * (porc_intermedio / 100))
+
+        cant_facil = round(total_preguntas * (porc_facil / 100))
+        cant_intermedio = round(total_preguntas * (porc_intermedio / 100))
         cant_dificil = total_preguntas - cant_facil - cant_intermedio
+
         query = Pregunta.objects.filter(curso_id=curso_id, anio_id=anio_id)
         if banco_filtro: query = query.filter(origen_banco=banco_filtro)
+
         def extraer(nivel, cant):
             disp = list(query.filter(nivel=nivel))
             return random.sample(disp, min(cant, len(disp))) if disp else []
+
         preguntas_examen = extraer('FACIL', cant_facil) + extraer('INTERMEDIO', cant_intermedio) + extraer('DIFICIL', cant_dificil)
         random.shuffle(preguntas_examen)
+
         if not preguntas_examen:
-            messages.error(request, "No se encontraron preguntas.")
+            messages.error(request, "No se encontraron preguntas con esos filtros.")
             return redirect('bancos_preguntas')
+
         if guardar_examen:
-            curso, anio = Curso.objects.get(id=curso_id), Anio.objects.get(id=anio_id)
+            curso = Curso.objects.get(id=curso_id)
+            anio = Anio.objects.get(id=anio_id)
             nuevo_examen = ExamenAsignado.objects.create(titulo=f"Examen de {curso.nombre} - {anio}", curso=curso, anio=anio, tiempo_minutos=tiempo_minutos, creado_por=request.user)
             nuevo_examen.preguntas.set(preguntas_examen)
-            messages.success(request, "¡Examen asignado exitosamente!")
+            messages.success(request, "¡Examen guardado y asignado a los alumnos exitosamente!")
             return redirect('bancos_preguntas')
+
         distractores = ["Ninguna de las anteriores", "Opción incorrecta", "Concepto no relacionado", "Definición errónea"]
         preguntas_renderizadas = [{'obj': p, 'opciones_corr': random.sample(list(p.contenido.get('pares', {}).values()) + [random.choice(distractores)], min(5, len(p.contenido.get('pares', {})) + 1)) if p.tipo.startswith('CORR') else []} for p in preguntas_examen]
+
         return render(request, 'core/rendir_examen.html', {'preguntas': preguntas_renderizadas, 'curso_obj': Curso.objects.get(id=curso_id), 'anio_obj': Anio.objects.get(id=anio_id), 'tiempo_minutos': tiempo_minutos})
     return redirect('bancos_preguntas')
 
@@ -442,6 +533,9 @@ def ver_resultados_examen(request, examen_id):
     lista_alumnos = [{'alumno': a, 'resultado': resultados.filter(alumno=a).first()} for a in alumnos]
     return render(request, 'core/resultados_asignados.html', {'examen': examen, 'lista_alumnos': lista_alumnos})
 
+# ==========================================
+# MÓDULO: REPORTES Y EXÁMENES ALEATORIOS
+# ==========================================
 @login_required
 @docente_required
 def ver_reportes(request):
@@ -451,7 +545,13 @@ def ver_reportes(request):
     tipos_data = {'labels': ['Opción Múltiple', 'Correlaciones', 'Verdadero/Falso', 'Completar'], 'values': [Pregunta.objects.filter(tipo='OM').count(), Pregunta.objects.filter(tipo__startswith='CORR').count(), Pregunta.objects.filter(tipo='VF').count(), Pregunta.objects.filter(tipo='COMP').count()]}
     notas_por_curso = ResultadoExamen.objects.values('curso__nombre').annotate(promedio=Avg('nota')).order_by('-promedio')[:5]
     notas_data = {'labels': [item['curso__nombre'] for item in notas_por_curso], 'values': [round(item['promedio'], 2) for item in notas_por_curso]}
-    context = {'total': Pregunta.objects.count(), 'count_om': Pregunta.objects.filter(tipo='OM').count(), 'count_corr': Pregunta.objects.filter(tipo__startswith='CORR').count(), 'count_vf': Pregunta.objects.filter(tipo='VF').count(), 'count_comp': Pregunta.objects.filter(tipo='COMP').count(), 'count_libre': Pregunta.objects.filter(tipo='LIBRE').count(), 'especialidades': Especialidad.objects.all(), 'cursos': Curso.objects.all(), 'anios': Anio.objects.all(), 'preguntas': preguntas, 'query': query, 'tipos_data': tipos_data, 'notas_data': notas_data}
+    context = {
+        'total': Pregunta.objects.count(), 'count_om': Pregunta.objects.filter(tipo='OM').count(), 
+        'count_corr': Pregunta.objects.filter(tipo__startswith='CORR').count(), 'count_vf': Pregunta.objects.filter(tipo='VF').count(), 
+        'count_comp': Pregunta.objects.filter(tipo='COMP').count(), 'count_libre': Pregunta.objects.filter(tipo='LIBRE').count(),
+        'especialidades': Especialidad.objects.all(), 'cursos': Curso.objects.all(), 'anios': Anio.objects.all(), 
+        'preguntas': preguntas, 'query': query, 'tipos_data': tipos_data, 'notas_data': notas_data
+    }
     return render(request, 'core/reportes.html', context)
 
 @login_required
@@ -501,6 +601,9 @@ def generar_examen_manual(request):
 def ver_historial_notas(request):
     return render(request, 'core/historial_notas.html', {'notas': ResultadoExamen.objects.all().order_by('-fecha_rendido')})
 
+# ==========================================
+# MÓDULO: RENDIR EXAMEN (ALUMNOS) Y CALIFICACIÓN
+# ==========================================
 @login_required
 def rendir_examen_asignado(request, examen_id):
     examen = get_object_or_404(ExamenAsignado, id=examen_id)
@@ -594,6 +697,9 @@ def guardar_revision_libres(request, resultado_id):
         return redirect('ver_historial_notas')
     return redirect('ver_historial_notas')
 
+# ==========================================
+# EXPORTAR A EXCEL
+# ==========================================
 def estilizar_excel(ws, headers):
     header_font = Font(color="FFFFFF", bold=True, size=12)
     header_fill = PatternFill(start_color="0B2545", end_color="0B2545", fill_type="solid")

@@ -49,6 +49,7 @@ urlpatterns = [
     path('reportes/rendir-examen/', views.rendir_examen, name='rendir_examen'),
     path('examen-asignado/<int:examen_id>/', views.rendir_examen_asignado, name='rendir_examen_asignado'),
     path('calificar-examen/', views.calificar_examen, name='calificar_examen'),
+    path('examen-resuelto-ia/', views.examen_resuelto_ia, name='examen_resuelto_ia'), # NUEVA RUTA
     
     # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
