@@ -11,8 +11,7 @@
     .badge-aprobado { background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #2e7d32; }
     .badge-desaprobado { background: #ffebee; color: #c62828; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #c62828; }
     .btn-excel { background: #1D6F42; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-revisar { background: #1565c0; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; transition: 0.2s; }
-    .btn-revisar:hover { background: #0d47a1; }
+    .btn-revisar { background: #1565c0; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
 </style>
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -32,7 +31,7 @@
                 <th>Curso</th>
                 <th>Año</th>
                 <th>Nota Final</th>
-                <th>Acciones</th> <!-- COLUMNA AGREGADA -->
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -50,7 +49,6 @@
                     {% endif %}
                 </td>
                 <td>
-                    <!-- LÓGICA PARA MOSTRAR EL BOTÓN SI HAY PREGUNTAS LIBRES -->
                     {% if n.respuestas_detalle.libres %}
                         <a href="{% url 'revisar_libres' n.id %}" class="btn-revisar">
                             <i class="fa-solid fa-pen-to-square"></i> Revisar Libres

@@ -3,7 +3,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- ESTA LÍNEA ES VITAL PARA QUE EL CELULAR NO HAGA ZOOM OUT -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SISEXAM - CITEN{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,12 +12,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; display: flex; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- BARRA SUPERIOR MÓVIL (Oculta en PC) --- */
+        /* BARRA SUPERIOR MÓVIL (Oculta en PC) */
         .mobile-header { display: none; background: #0B2545; color: white; padding: 15px; align-items: center; justify-content: space-between; position: fixed; width: 100%; top: 0; z-index: 1000; border-bottom: 3px solid #E6A817; }
         .mobile-header .logo { font-size: 18px; font-weight: bold; color: #E6A817; }
         .btn-menu { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
 
-        /* --- SIDEBAR LATERAL (PC) --- */
+        /* SIDEBAR LATERAL */
         .sidebar { width: 260px; background: linear-gradient(180deg, #0B2545 0%, #1B3B6F 100%); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; left: 0; top: 0; z-index: 1001; box-shadow: 4px 0 10px rgba(0,0,0,0.1); transition: 0.3s ease-in-out; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background-color: #0B2545; }
         .sidebar-header img { width: 70px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
@@ -40,38 +39,26 @@
         /* Fondo oscuro al abrir el menú en celular */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
 
-        /* --- ÁREA DE CONTENIDO --- */
+        /* ÁREA DE CONTENIDO */
         .main-content { margin-left: 260px; flex: 1; padding: 30px; min-height: 100vh; background-color: #f4f6f9; width: calc(100% - 260px); }
         
         .btn-dorado { background: linear-gradient(to bottom, #E6A817, #c99314); color: #0B2545; text-decoration: none; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; display: inline-block; padding: 10px 20px; text-align: center; }
         .btn-dorado:hover { background: #c99314; color: white; }
 
-        /* --- RESPONSIVE PARA CELULARES Y TABLETS --- */
+        /* RESPONSIVE PARA CELULARES */
         @media (max-width: 768px) {
             .mobile-header { display: flex; }
-            
-            .sidebar { left: -260px; /* Oculto a la izquierda */ }
-            .sidebar.active { left: 0; /* Aparece al presionar el botón */ }
-            
+            .sidebar { left: -260px; }
+            .sidebar.active { left: 0; }
             .overlay.active { display: block; }
-            
-            .main-content { margin-left: 0; width: 100%; padding: 80px 15px 20px 15px; /* Espacio para la barra superior */ }
-            
-            /* Hacer que las tablas se puedan deslizar hacia los lados */
+            .main-content { margin-left: 0; width: 100%; padding: 80px 15px 20px 15px; }
             table { display: block; width: 100%; overflow-x: auto; white-space: nowrap; }
-            
-            /* Convertir las columnas en filas (1 sola columna) */
-            .stats-grid, .charts-container, .middle-grid, .menu-grid, .quick-access-grid, .form-row { 
-                display: flex !important; flex-direction: column !important; width: 100% !important; 
-            }
+            .stats-grid, .charts-container, .middle-grid, .menu-grid, .quick-access-grid, .form-row { display: flex !important; flex-direction: column !important; width: 100% !important; }
             .stat-card, .chart-box, .card-panel, .quick-card, .card-modulo { width: 100% !important; margin-bottom: 15px; }
-            
-            /* Ajustar el dashboard */
             .dashboard-header { flex-direction: column; text-align: center; gap: 15px; padding: 20px; }
             .dashboard-header img { margin: 0 auto; }
         }
 
-        /* Para impresión (PDF) */
         @media print {
             body { background: white !important; }
             .sidebar, .mobile-header, .overlay, .no-print, .btn-dorado { display: none !important; }
@@ -82,13 +69,12 @@
 </head>
 <body>
 
-    <!-- BARRA SUPERIOR SOLO PARA CELULARES -->
+    <!-- BARRA SUPERIOR MÓVIL -->
     <div class="mobile-header">
         <div class="logo">SISEXAM CITEN</div>
         <button class="btn-menu" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
     </div>
 
-    <!-- FONDO OSCURO (Para cerrar el menú) -->
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
     <!-- MENÚ LATERAL -->
@@ -142,7 +128,6 @@
         </div>
     </nav>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content">
         {% block contenido %}
         {% endblock %}
@@ -154,7 +139,6 @@
         {% endfor %}
     </div>
 
-    <!-- SCRIPT PARA ABRIR/CERRAR EL MENÚ EN CELULAR -->
     <script>
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('active');
@@ -162,7 +146,6 @@
         }
     </script>
 
-    <!-- NOTIFICACIONES -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const contenedor = document.getElementById("django-messages");

@@ -2,121 +2,41 @@
 
 {% block contenido %}
 <style>
-    /* Contenedor principal */
-    .upload-wrapper { 
-        max-width: 1000px; 
-        margin: 40px auto; 
-        background: white; 
-        border-radius: 12px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-        overflow: hidden; 
-        border-top: 6px solid #0B2545; 
-    }
-    
-    .upload-header { 
-        background: #f8fafc; 
-        padding: 30px; 
-        text-align: center; 
-        border-bottom: 1px solid #eee; 
-    }
+    .upload-wrapper { max-width: 1000px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border-top: 6px solid #0B2545; }
+    .upload-header { background: #f8fafc; padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
     .upload-header h2 { margin: 0; font-size: 26px; color: #0B2545; font-weight: bold; }
     .upload-header p { margin: 10px 0 0 0; color: #666; font-size: 15px; }
     
     .upload-body { padding: 40px; }
     
-    /* Cuadrícula de 2 columnas */
-    .grid-layout { 
-        display: grid; 
-        grid-template-columns: 1fr 1fr; 
-        gap: 40px; 
-        margin-bottom: 30px; 
-        align-items: stretch; /* Hace que ambas columnas midan lo mismo */
-    }
-    
-    /* Columna izquierda (Flex para empujar el drop-zone) */
-    .col-left { display: flex; flex-direction: column; }
+    .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
     
     .form-group { margin-bottom: 20px; }
     .form-group label { display: block; font-weight: bold; color: #0B2545; margin-bottom: 8px; font-size: 14px; }
     
-    /* Inputs */
-    .form-control, .form-select { 
-        width: 100%; 
-        padding: 12px; 
-        border: 1px solid #ccc; 
-        border-radius: 6px; 
-        font-family: inherit; 
-        font-size: 14px; 
-        box-sizing: border-box; 
-        transition: 0.2s;
-    }
+    .form-control, .form-select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; font-size: 14px; box-sizing: border-box; transition: 0.2s; }
     .form-control:focus, .form-select:focus { border-color: #0B2545; outline: none; box-shadow: 0 0 5px rgba(11, 37, 69, 0.2); }
 
-    /* Zona de subir archivo */
-    .drop-zone { 
-        border: 3px dashed #b0b0b0; 
-        border-radius: 10px; 
-        padding: 20px; 
-        text-align: center; 
-        background: #f9f9f9; 
-        cursor: pointer; 
-        transition: 0.3s; 
-        flex-grow: 1; /* Esto hace que ocupe todo el espacio vertical restante */
-        display: flex; 
-        flex-direction: column; 
-        justify-content: center; 
-        align-items: center;
-    }
+    .drop-zone { border: 3px dashed #b0b0b0; border-radius: 10px; padding: 40px 20px; text-align: center; background: #f9f9f9; cursor: pointer; transition: 0.3s; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 200px; }
     .drop-zone:hover { background: #f0f4f8; border-color: #0B2545; }
     .drop-zone input[type="file"] { display: none; }
     .drop-zone i { font-size: 50px; color: #0B2545; margin-bottom: 15px; display: block; }
     .drop-zone .text-main { font-size: 16px; font-weight: bold; color: #0B2545; }
     .drop-zone .text-sub { font-size: 13px; color: #666; margin-top: 5px; }
 
-    /* Panel derecho de configuración */
-    .config-box { 
-        background: #f8fafc; 
-        padding: 25px; 
-        border-radius: 10px; 
-        border: 1px solid #e0e0e0; 
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
+    .config-box { background: #f8fafc; padding: 25px; border-radius: 10px; border: 1px solid #e0e0e0; }
     .config-box h4 { margin-top: 0; margin-bottom: 20px; color: #0B2545; font-size: 18px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
     
     .config-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .config-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     
-    .check-item { 
-        display: flex; align-items: center; gap: 10px; background: white; 
-        padding: 10px 15px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-size: 14px;
-    }
+    .check-item { display: flex; align-items: center; gap: 10px; background: white; padding: 10px 15px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-size: 14px; }
     .check-item input { width: 18px; height: 18px; accent-color: #E6A817; cursor: pointer; margin: 0; }
 
-    /* Botón */
-    .btn-upload { 
-        display: block; 
-        width: 100%; 
-        background: #0B2545; 
-        color: #E6A817; 
-        font-size: 18px; 
-        font-weight: bold; 
-        padding: 18px; 
-        border: none; 
-        border-radius: 8px; 
-        cursor: pointer; 
-        transition: 0.3s; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-        margin-top: 10px;
-    }
+    .btn-upload { display: block; width: 100%; background: #0B2545; color: #E6A817; font-size: 18px; font-weight: bold; padding: 18px; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
     .btn-upload:hover { background: #E6A817; color: #0B2545; transform: translateY(-2px); }
     
-    /* Diseño para celulares */
-    @media (max-width: 800px) {
-        .grid-layout { grid-template-columns: 1fr; gap: 20px; }
-        .config-grid-3 { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 800px) { .grid-layout { grid-template-columns: 1fr; gap: 20px; } .config-grid-3 { grid-template-columns: 1fr; } }
 </style>
 
 <div class="upload-wrapper">
@@ -138,18 +58,16 @@
             
             <div class="grid-layout">
                 <!-- COLUMNA IZQUIERDA -->
-                <div class="col-left">
-                    <div class="form-group">
-                        <label>{{ form.curso.label }}:</label>
-                        {{ form.curso }}
-                    </div>
-                    <div class="form-group">
-                        <label>{{ form.anio.label }}:</label>
-                        {{ form.anio }}
-                    </div>
+                <div>
+                    <div class="form-group"><label>{{ form.especialidad.label }}:</label>{{ form.especialidad }}</div>
+                    <div class="form-group"><label>{{ form.curso.label }}:</label>{{ form.curso }}</div>
+                    <div class="form-group"><label>{{ form.nuevo_curso.label }}:</label>{{ form.nuevo_curso }}</div>
+                    <div class="form-group"><label>{{ form.anio.label }}:</label>{{ form.anio }}</div>
+                    <div class="form-group"><label>{{ form.seccion.label }}:</label>{{ form.seccion }}</div>
+                    <div class="form-group"><label>{{ form.nombre_examen.label }}:</label>{{ form.nombre_examen }}</div>
                     
                     <div class="drop-zone" onclick="document.getElementById('id_archivo').click();">
-                        <label for="{{ form.archivo.id_for_label }}" style="cursor: pointer; margin: 0; width: 100%;">
+                        <label for="{{ form.archivo.id_for_label }}" style="cursor: pointer; margin: 0;">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
                             <div class="text-main">Haz clic para subir tu archivo</div>
                             <div class="text-sub">Formatos: .PDF, .DOCX, .PPTX</div>
@@ -161,28 +79,23 @@
 
                 <!-- COLUMNA DERECHA -->
                 <div class="config-box">
-                    <div>
-                        <h4><i class="fa-solid fa-sliders"></i> Configuración</h4>
-                        
-                        <div class="form-group">
-                            <label>{{ form.cantidad.label }}:</label>
-                            {{ form.cantidad }}
-                        </div>
+                    <h4><i class="fa-solid fa-sliders"></i> Configuración del Examen</h4>
+                    
+                    <div class="form-group"><label>{{ form.cantidad.label }}:</label>{{ form.cantidad }}</div>
 
-                        <label style="font-weight: bold; color: #0B2545; font-size: 14px; display: block; margin-bottom: 8px;">Dificultad (%):</label>
-                        <div class="config-grid-3">
-                            <div>{{ form.porc_facil }}</div>
-                            <div>{{ form.porc_intermedio }}</div>
-                            <div>{{ form.porc_dificil }}</div>
-                        </div>
+                    <label style="font-weight: bold; color: #0B2545; font-size: 14px; display: block; margin-bottom: 8px;">Dificultad (%):</label>
+                    <div class="config-grid-3">
+                        <div>{{ form.porc_facil }}</div>
+                        <div>{{ form.porc_intermedio }}</div>
+                        <div>{{ form.porc_dificil }}</div>
+                    </div>
 
-                        <label style="font-weight: bold; color: #0B2545; font-size: 14px; display: block; margin-bottom: 8px;">Tipos de Pregunta:</label>
-                        <div class="config-grid-2">
-                            <label class="check-item">{{ form.incluir_om }} {{ form.incluir_om.label }}</label>
-                            <label class="check-item">{{ form.incluir_vf }} {{ form.incluir_vf.label }}</label>
-                            <label class="check-item">{{ form.incluir_comp }} {{ form.incluir_comp.label }}</label>
-                            <label class="check-item">{{ form.incluir_corr }} {{ form.incluir_corr.label }}</label>
-                        </div>
+                    <label style="font-weight: bold; color: #0B2545; font-size: 14px; display: block; margin-bottom: 8px;">Tipos de Pregunta:</label>
+                    <div class="config-grid-2">
+                        <label class="check-item">{{ form.incluir_om }} {{ form.incluir_om.label }}</label>
+                        <label class="check-item">{{ form.incluir_vf }} {{ form.incluir_vf.label }}</label>
+                        <label class="check-item">{{ form.incluir_comp }} {{ form.incluir_comp.label }}</label>
+                        <label class="check-item">{{ form.incluir_corr }} {{ form.incluir_corr.label }}</label>
                     </div>
                 </div>
             </div>
